@@ -1,0 +1,6 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=3537
+
+-Defines a new command, :XPathSearchPrompt that begins XPath search mode.
+-Start typing your XPath and see the results pop up in vim's location list as you type
+
+Also see github: https://github.com/actionshrimp/vim-xpath
