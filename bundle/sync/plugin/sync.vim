@@ -44,9 +44,15 @@ function! sync#execute()
 endfunction
 
 function! sync#restore_session()
-    execute 'let g:Sync = ' . g:Str_Sync
+	if (exists('g:Str_Sync'))
+		execute 'let g:Sync = ' . g:Str_Sync
+	endif
 endfunction
 
 function! sync#save_session()
-    let g:Str_Sync = string(g:Sync)
+	if (exists('g:Sync'))
+		let g:Str_Sync = string(g:Sync)
+	else
+		let g:Str_Sync = ""
+	endif
 endfunction
