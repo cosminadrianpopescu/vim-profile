@@ -68,6 +68,9 @@ if ($TABSTOP != '')
     execute ":set shiftwidth=" . $TABSTOP
 endif
 
+autocmd BufWinLeave *.* mkview
+autocmd BufWinEnter *.* silent loadview
+
 set expandtab
 set smarttab
 set scrolloff=10
@@ -91,8 +94,8 @@ imap <C-l> -<Esc>vy39po
 nmap <Leader>d :pwd<cr>
 nmap <Leader>t :NERDTreeToggle<cr>
 nmap <Leader>J :JavaSearch -p 
-nmap <Leader>X <C-W><C-W>:q<cr>
-nmap <Leader>x :WintabsClose<cr>:tabn<cr>
+""nmap <Leader>X <C-W><C-W>:q<cr>
+nmap <Leader>x :WintabsClose<cr>:WintabsNext<cr>
 nmap <Leader>w <C-W><C-w>z60<cr>
 nmap <Leader>h :WintabsPrevious<cr>
 nmap <Leader>j :buffer #<cr>
@@ -100,8 +103,11 @@ nmap <Leader>k :buffer #<cr>
 nmap <Leader>l :WintabsNext<cr>
 imap jj <del>
 nmap <Leader>b ^
+vmap <Leader>b ^
+nmap <Leader>e $
 vmap <Leader>e $
 nmap <Leader>n :WintabsGo 
+nmap <Leader>N :tabn 
 nnoremap / /\v
 cnoremap %s %s/\v
 
