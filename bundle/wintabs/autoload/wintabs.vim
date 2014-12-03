@@ -202,6 +202,17 @@ function! wintabs#go(n)
   call s:switch_tab(n, 0)
 endfunction
 
+" move to the previous tab
+function! wintabs#previous()
+	let buffer = bufnr('#')
+	let pos = index(w:wintabs_buflist, buffer)
+	if pos == -1
+		return
+	endif
+	let pos = pos + 1
+	call wintabs#go(pos)
+endfunction
+
 " move the current tab by n tabs
 function! wintabs#move(n)
   call wintabs#refresh_buflist(0)
