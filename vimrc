@@ -99,9 +99,9 @@ nmap <Leader>J :JavaSearch -p
 nmap <Leader>x :WintabsClose<cr>:WintabsNext<cr>
 nmap <Leader>w <C-W><C-w>z60<cr>
 nmap <Leader>h :WintabsPrevious<cr>
-nmap <Leader>j :buffer #<cr>
 nmap <Leader>k :call wintabs#previous()<cr>
 nmap <Leader>j :call wintabs#previous()<cr>
+nmap <Leader>l :WintabsNext<cr>
 imap jj <del>
 nmap <Leader>b ^
 vmap <Leader>b ^
