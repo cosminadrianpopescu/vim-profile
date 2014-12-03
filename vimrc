@@ -1,3 +1,4 @@
+"Just a test
 set nocompatible
 
 python from powerline.vim import setup as powerline_setup
