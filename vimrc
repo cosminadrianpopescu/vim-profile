@@ -10,6 +10,7 @@ set undodir=~/.vim/undos
 
 let g:EclimHighlightTrace = 'Normal'
 let g:EclimLogLevel = 'info'
+""let g:EclimCompletionMethod='omnifunc'
 
 source $VIMRUNTIME/vimrc_example.vim
 ""source $VIMRUNTIME/mswin.vim
@@ -189,7 +190,7 @@ autocmd FileType js set omnifunc=javascriptcomplete#CompleteJS
 ""autocmd FileType html setlocal foldmethod=indent
 ""autocmd FileType html set omnifunc=htmlcomplete#CompleteTags
 "autocmd FileType htm set omnifunc=htmlcomplete#CompleteTags
-autocmd FileType c set omnifunc=ccomplete#CompleteCpp
+"autocmd FileType c set omnifunc=ccomplete#CompleteCpp
 autocmd FileType cs setlocal omnifunc=OmniSharp#Complete
 ""autocmd BufWritePre * :%s/\v\s+$//e | :%s/\t/\=TabSpaces($TABSTOP)/e
 
