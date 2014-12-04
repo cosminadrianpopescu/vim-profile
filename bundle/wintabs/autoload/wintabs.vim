@@ -300,6 +300,7 @@ function! wintabs#refresh_buflist(window)
   let window = a:window == 0 ? winnr() : a:window
 
   " load buflist from saved value
+  ""echomsg string(w:wintabs_buflist)
   let buflist = getwinvar(window, 'wintabs_buflist', [])
 
   " remove stale bufs
@@ -328,6 +329,7 @@ function! s:buflisted(buffer)
   let filetype = getbufvar(a:buffer, '&filetype', '')
   let ignored = index(g:wintabs_ignored_filetypes, filetype) != -1
   let empty = bufname(a:buffer) == '' && !getbufvar(a:buffer, '&modified')
+  ""echomsg string(a:buffer) . ": " . string(filetype) . " "  . string(ignored) . " " . string(empty)
   return buflisted(a:buffer) && !ignored && !empty
 endfunction
 
