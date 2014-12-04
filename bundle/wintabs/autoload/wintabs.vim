@@ -300,7 +300,6 @@ function! wintabs#refresh_buflist(window)
   let window = a:window == 0 ? winnr() : a:window
 
   " load buflist from saved value
-  ""echomsg string(w:wintabs_buflist)
   let buflist = getwinvar(window, 'wintabs_buflist', [])
 
   " remove stale bufs

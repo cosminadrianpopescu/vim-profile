@@ -70,8 +70,10 @@ if ($TABSTOP != '')
     execute ":set shiftwidth=" . $TABSTOP
 endif
 
+""set viewoptions=folds,cursor
+
 autocmd BufWinLeave *.* mkview
-autocmd BufWinEnter *.* silent loadview
+autocmd BufWinEnter *.* silent noautocmd loadview
 
 set expandtab
 set smarttab
