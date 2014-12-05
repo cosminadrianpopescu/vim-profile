@@ -194,6 +194,7 @@ autocmd FileType js set omnifunc=javascriptcomplete#CompleteJS
 "autocmd FileType htm set omnifunc=htmlcomplete#CompleteTags
 "autocmd FileType c set omnifunc=ccomplete#CompleteCpp
 autocmd FileType cs setlocal omnifunc=OmniSharp#Complete
+autocmd FileType jsp set filetype=xml
 ""autocmd BufWritePre * :%s/\v\s+$//e | :%s/\t/\=TabSpaces($TABSTOP)/e
 
 autocmd InsertEnter * setlocal foldmethod=manual
