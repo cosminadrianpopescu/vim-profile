@@ -2,6 +2,7 @@ viminfo
 undos
 bundle/Omnisharp
 bundle/eclim
+bundle/netrw
 view
 .netrwhist
 sessions
