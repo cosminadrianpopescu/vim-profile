@@ -67,7 +67,9 @@ function! wintabs#close()
     if !getbufvar(buffer, '&modified')
       call filter(w:wintabs_buflist, 'v:val != '.buffer)
     endif
-    execute "bwipeout " . buffer
+    if (g:wintabs_wipeout_buffer_onclose)
+        execute "bwipeout " . buffer
+    endif
   endif
 endfunction
 
