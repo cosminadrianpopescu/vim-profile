@@ -140,7 +140,7 @@ inoremap <tab> <C-R>=TriggerSnippet()<CR>
 nmap <Leader>s :w<cr>
 nmap <Leader>q :WintabsClose<cr>:silent! edit<cr>
 nmap <Leader>Q :q!<cr>:tabp<cr>
-nmap <C-]> <C-w><C-]><C-w>T
+""nmap <C-]> <C-w><C-]><C-w>T
 nmap <C-\>> <C-w>}
 vmap <leader>c <esc>:call feedkeys("\e`<i/*\e`>a*/\e")<cr>
 nmap <leader>tw :%s/\v\s+$//ge \| :%s/\t/\=TabSpaces($TABSTOP)/ge \| :w<cr>
