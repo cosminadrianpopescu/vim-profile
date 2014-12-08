@@ -69,6 +69,7 @@ let mapleader=" "
 let php_folding=1
 let javaScript_fold=1
 let xml_syntax_folding=1
+let g:sessionman_save_on_exit = 0
 
 if $CHANGE_CURSOR == "1"
   let &t_SI .= "\<Esc>[5 q"
