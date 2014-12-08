@@ -69,12 +69,17 @@ let mapleader=" "
 let php_folding=1
 let javaScript_fold=1
 let xml_syntax_folding=1
-let g:sessionman_save_on_exit = 0
 
-if $CHANGE_CURSOR == "1"
-  let &t_SI .= "\<Esc>[5 q"
-  let &t_EI .= "\<Esc>[1 q"
-endif
+let g:sessionman_save_on_exit = 0
+let g:togglecursor_default = 'block'
+let g:togglecursor_insert = 'line'
+let g:togglecursor_leave = 'line'
+let g:sync_default_args = '--recursive'
+
+""if $CHANGE_CURSOR == "1"
+""  let &t_SI .= "\<Esc>[5 q"
+""  let &t_EI .= "\<Esc>[1 q"
+""endif
 
 " ================================================================================
 " Autocommands
@@ -158,6 +163,12 @@ function! TabSpaces(n)
     let result = result . " "
    endfor
   return result
+endfunction
+
+function! FileSync(source, dest)
+    let dest_folder = substitute(a:dest, '\v[\/]?[^\/]+$', '', 'g')
+    execute "!mkdir -p " . dest_folder
+    execute '!cp "' . a:source . '" "' . a:dest . '"'
 endfunction
 
 " ================================================================================
