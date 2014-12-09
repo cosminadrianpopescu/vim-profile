@@ -166,7 +166,7 @@ function! TabSpaces(n)
   return result
 endfunction
 
-function! FileSync(source, dest)
+function! Cp(source, dest)
     let dest_folder = substitute(a:dest, '\v[\/]?[^\/]+$', '', 'g')
     execute "!mkdir -p " . dest_folder
     execute '!cp "' . a:source . '" "' . a:dest . '"'
