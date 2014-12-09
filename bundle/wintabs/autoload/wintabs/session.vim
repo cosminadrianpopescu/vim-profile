@@ -44,6 +44,11 @@ function! wintabs#session#load()
         continue
       endif
 
+	  " continue if we have no bufnamelist
+	  if len(bufnamelist) == 0
+		  continue
+	  endif
+
       " map bufnames to bufnrs
       let buflist = []
       for name in bufnamelist
