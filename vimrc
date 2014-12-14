@@ -74,7 +74,6 @@ let g:sessionman_save_on_exit = 0
 let g:togglecursor_default = 'block'
 let g:togglecursor_insert = 'line'
 let g:togglecursor_leave = 'line'
-let g:sync_default_args = '--recursive'
 let g:wintabs_wipeout_buffer_onclose = 1
 
 ""if $CHANGE_CURSOR == "1"
