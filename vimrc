@@ -72,8 +72,9 @@ let xml_syntax_folding=1
 
 let g:sessionman_save_on_exit = 0
 let g:togglecursor_default = 'block'
-let g:togglecursor_insert = 'line'
-let g:togglecursor_leave = 'line'
+let g:togglecursor_insert = 'blinking_line'
+let g:togglecursor_leave = 'blinking_line'
+let g:sync_default_args = '--recursive'
 let g:wintabs_wipeout_buffer_onclose = 1
 
 ""if $CHANGE_CURSOR == "1"
@@ -143,6 +144,7 @@ nmap <up> <nop>
 nmap <down> <nop>
 "End mapping of cursors
 inoremap <tab> <C-R>=TriggerSnippet()<CR>
+nmap <leader>by :SessionSave<cr>:qa<cr>
 nmap <Leader>s :w<cr>
 nmap <Leader>q :WintabsClose<cr>:silent! edit<cr>
 nmap <Leader>Q :q!<cr>:tabp<cr>
