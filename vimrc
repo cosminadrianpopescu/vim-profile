@@ -179,7 +179,7 @@ endfunction
 if ($VIM_COLORS != "")
   colorscheme $VIM_COLORS
 else
-  colorscheme Monokai-Refined
+  colorscheme atom-dark-256
   ""colorscheme monokai
 endif
 
