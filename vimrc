@@ -145,7 +145,7 @@ nmap <up> <nop>
 nmap <down> <nop>
 "End mapping of cursors
 inoremap <tab> <C-R>=TriggerSnippet()<CR>
-nmap <leader>by :SessionSave<cr>:qa<cr>
+nmap <leader>By :SessionSave<cr>:qa<cr>
 nmap <Leader>s :w<cr>
 nmap <Leader>q :WintabsClose<cr>:silent! edit<cr>
 nmap <Leader>Q :q!<cr>:tabp<cr>
