@@ -107,6 +107,7 @@ autocmd BufWritePost * setl fdm=syntax
 nmap <Leader>f :echo @%<cr>
 nnoremap <Leader>p byw:PhpSearch -p <C-R>"<cr>
 imap kk <C-R>"
+imap kj <Esc>
 imap <C-l> -<Esc>vy39po
 nmap <Leader>d :pwd<cr>
 nmap <Leader>t :NERDTreeToggle<cr>
