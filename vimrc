@@ -76,6 +76,7 @@ let g:togglecursor_insert = 'blinking_line'
 let g:togglecursor_leave = 'blinking_line'
 let g:sync_default_args = '--recursive'
 let g:wintabs_wipeout_buffer_onclose = 1
+let g:EasyMotion_skipfoldedline = 0
 
 ""if $CHANGE_CURSOR == "1"
 ""  let &t_SI .= "\<Esc>[5 q"
