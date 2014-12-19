@@ -953,7 +953,7 @@ elseif has("gui_running") || &t_Co == 256
     CSAHi Title term=bold cterm=NONE ctermbg=bg ctermfg=146 gui=NONE guibg=bg guifg=#B6B7EB
     CSAHi Visual term=reverse cterm=NONE ctermbg=59 ctermfg=fg gui=NONE guibg=#403D3D guifg=fg
     CSAHi VisualNOS term=NONE cterm=NONE ctermbg=59 ctermfg=fg gui=NONE guibg=#403D3D guifg=fg
-    CSAHi WarningMsg term=NONE cterm=NONE ctermbg=236 ctermfg=231 gui=NONE guibg=#333333 guifg=#FFFFFF
+    CSAHi WarningMsg term=NONE cterm=NONE ctermbg=red ctermfg=yellow gui=NONE guibg=#333333 guifg=#FFFFFF
     CSAHi WildMenu term=NONE cterm=NONE ctermbg=16 ctermfg=81 gui=NONE guibg=#000000 guifg=#66D9EF
     CSAHi LightLineLeft_normal_2_raw term=NONE cterm=NONE ctermbg=bg ctermfg=fg gui=NONE guibg=bg guifg=fg
     CSAHi LightLineRight_normal_raw_3 term=NONE cterm=NONE ctermbg=bg ctermfg=fg gui=NONE guibg=bg guifg=fg
