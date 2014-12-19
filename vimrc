@@ -113,8 +113,12 @@ imap <C-l> -<Esc>vy39po
 nmap <Leader>d :pwd<cr>
 nmap <Leader>t :NERDTreeToggle<cr>
 nmap <Leader>J :JavaSearch -p 
-nmap <Leader>x :WintabsClose<cr>:WintabsNext<cr>
+""nmap <Leader>x :WintabsClose<cr>:WintabsNext<cr>
 nmap <Leader>w <C-W><C-w>z60<cr>
+nmap <Leader>: q:i
+cmap <C-k> <up>
+cmap <C-j> <down>
+nmap <Leader>x ggVGx
 nmap <Leader>h :WintabsPrevious<cr>
 nmap <Leader>k :call wintabs#previous()<cr>
 nmap <Leader>j :call wintabs#previous()<cr>
