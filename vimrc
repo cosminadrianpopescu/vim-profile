@@ -132,7 +132,7 @@ vmap <Leader>e $
 nmap <Leader>G ggVGy<C-o><C-o>
 nmap <Leader>n :WintabsGo 
 nmap <Leader>N :tabn 
-nnoremap / /\v
+nnoremap / /\v\c
 cnoremap %s %s/\v
 nmap <Leader>g :JavaSearchContext<cr>
 nmap <Leader>i :JavaSearchContext -x implementors<cr>
