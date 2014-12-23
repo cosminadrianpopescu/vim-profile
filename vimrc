@@ -119,6 +119,7 @@ nmap <Leader>: q:i
 cmap <C-k> <up>
 cmap <C-j> <down>
 nmap <Leader>x ggVGx
+nmap <Leader>r :e<cr>
 nmap <Leader>h :WintabsPrevious<cr>
 nmap <Leader>k :call wintabs#previous()<cr>
 nmap <Leader>j :call wintabs#previous()<cr>
