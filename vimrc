@@ -20,6 +20,7 @@ set laststatus=2
 set tabstop=4
 set shiftwidth=4
 set sessionoptions+=globals
+set mouse=
 if ($TABSTOP != '')
     execute ":set tabstop=" . $TABSTOP
     execute ":set shiftwidth=" . $TABSTOP
@@ -78,6 +79,9 @@ let g:sync_default_args = '--recursive'
 let g:wintabs_wipeout_buffer_onclose = 1
 let g:EasyMotion_skipfoldedline = 0
 
+let @o = ':SWDbExplorer '
+let @c = ':SWDbExplorerClose'
+
 ""if $CHANGE_CURSOR == "1"
 ""  let &t_SI .= "\<Esc>[5 q"
 ""  let &t_EI .= "\<Esc>[1 q"
@@ -114,6 +118,7 @@ nmap <Leader>d :pwd<cr>
 nmap <Leader>t :NERDTreeToggle<cr>
 nmap <Leader>J :JavaSearch -p 
 ""nmap <Leader>x :WintabsClose<cr>:WintabsNext<cr>
+""map <Leader> <Plug>(easymotion-prefix)
 nmap <Leader>w <C-W><C-w>z60<cr>
 nmap <Leader>: q:i
 cmap <C-k> <up>
@@ -132,6 +137,7 @@ vmap <Leader>e $
 nmap <Leader>G ggVGy<C-o><C-o>
 nmap <Leader>n :WintabsGo 
 nmap <Leader>N :tabn 
+nmap M m$
 nnoremap / /\v\c
 cnoremap %s %s/\v
 nmap <Leader>g :JavaSearchContext<cr>
