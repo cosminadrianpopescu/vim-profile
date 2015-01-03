@@ -117,6 +117,7 @@ function! s:OpenSession(name)
 			execute 'silent! so ' . s:sessions_path . '/' . a:name
 			execute 'silent! bwipeout! ' . n
 		finally
+			let g:SessionLoad = 1
 			set eventignore=
 			doautoall BufRead
 			doautoall FileType
@@ -124,6 +125,7 @@ function! s:OpenSession(name)
 			doautoall BufWinEnter
 			doautoall TabEnter
 			doautoall SessionLoadPost
+			unlet g:SessionLoad
 		endtry
 		if has('cscope')
 			silent! cscope add .
