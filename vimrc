@@ -84,6 +84,14 @@ let g:sw_config_dir = '/home/lixa/.sqlworkbench/'
 
 let @o = ':SWDbExplorer '
 let @c = ':SWDbExplorerClose'
+let @s = ':SWSqlOpen '
+
+if $OS =~ '\c\vwindows'
+	let g:sw_plugin_path = 'e:/.vim/bundle/vim-sqlworkbench/'
+	let g:sw_exe = 'c:/Pgm/workbench/sqlwbconsole.exe'
+	let g:sw_tmp = 'e:/tmp'
+	let g:sw_config_dir = 'z:/.sqlworkbench/'
+endif
 
 ""if $CHANGE_CURSOR == "1"
 ""  let &t_SI .= "\<Esc>[5 q"
@@ -171,6 +179,7 @@ vmap <leader>c <esc>:call feedkeys("\e`<i/*\e`>a*/\e")<cr>
 nmap <leader>tw :%s/\v\s+$//ge \| :%s/\t/\=TabSpaces($TABSTOP)/ge \| :w<cr>
 imap <Esc>oC <Esc>li
 nmap <Leader><F3> :let @/ = "\\<" . expand("<cword>") . "\\>"<cr>
+nmap <Leader>p :echo b:profile<cr>
 map <S-Insert> <MiddleMouse>
 map! <S-Insert> <MiddleMouse>
 
@@ -190,6 +199,74 @@ function! Cp(source, dest)
     execute '!cp "' . a:source . '" "' . a:dest . '"'
 endfunction
 
+function! Prepare_run_all()
+	tabnew
+	call s:prepare_run_all('run-all.sql')
+endfunction
+
+function! s:prepare_run_all(file)
+	let b = bufnr('%')
+	execute "e " . a:file
+	normal gg
+	silent! execute '%s/\v;//g'
+	silent! execute '%s/\vprompt(.{-});[ \s\t]*$/wbecho \1/g'
+	silent! execute '%s/\vprompt(.*)$/wbecho \1;/g'
+	normal gg
+
+	let pattern = '\v^\@([^;]+)(;)?[ \s\t]*$'
+	let r = search(pattern)
+	while r != 0
+		normal x
+		normal y$
+		let _file  = @"
+		normal ddk
+		let e = 'WbInclude -file=' . _file . ' -continueOnError=true -searchFor="(prompt|show errors).*" =useRegex=true -replaceWith="" -ignoreCase=true -printStatements=true -displayResult=true;'
+		put =e
+		write
+		let cmd = "edit " . _file
+		execute cmd
+		call Prepare_run_all_file()
+		write
+		execute "buffer " . b
+		let r = search(pattern)
+	endwhile
+endfunction
+
+function! s:prepare_run(pattern, n)
+	silent! execute '%s/\v^[ \s\t]*prompt.*$//g'
+	let pattern1 = a:pattern
+	let pattern2 = '\v^[ \s\t]*\/[ \s\t]*$'
+	let @/ = ''
+	let n = a:n
+	let r = search(pattern1)
+	while r != 0
+		normal V
+		let i = search(pattern2)
+		if (i == 0)
+			break
+		endif
+		normal y 
+		normal 0V
+		let i = search(pattern2)
+		normal xk
+		let e = 'WbInclude -file="' . bufname('%') . '-' . n . '" -continueOnError=true -searchFor="(prompt|show errors).*" -useRegex=true -replaceWith="" -ignoreCase=true -printStatements=true -displayResult=true -delimiter=/;'
+		put =''
+		put =e
+		put =''
+		let lines = split(@", '\n')
+		call writefile(lines, bufname('%') . '-' . n)
+		let n = n + 1
+		let r = search(pattern1)
+	endwhile
+endfunction
+
+function! Prepare_run_all_file()
+	normal gg
+	call s:prepare_run('\v\c^[\s\t ]*create[\s\t ]+(or[\s\t ]+replace[\s\t ]+)?(function|library|package|procedure|trigger|type)', 1)
+	normal gg
+	call s:prepare_run('\v\c^[ \s\t]*begin[ \s\t]*$', 1000)
+endfunction
+
 " ================================================================================
 " Colors
 ""set guifont=Liberation_Mono
@@ -201,3 +278,7 @@ else
 endif
 
 so ~/.vim/colors.vim
+
+call sw#dbexplorer#add_tab('*', 'DB Links', 'L', 'select db_link, username, created  from user_db_links;', [{'title': 'Show the host', 'shortcut': 'H', 'command': "select host from user_db_links where db_link = '%object%'"}])
+call sw#dbexplorer#add_tab('*', 'Row Counts', 'W', 'WbRowCount;', [])
+call sw#dbexplorer#add_tab('*', 'User Jobs', 'J', 'select job_name, job_creator, start_date, repeat_interval from user_scheduler_jobs', [{'title': 'Job source', 'shortcut': 'S', 'command': "select job_action from user_scheduler_jobs where job_name = '%object%'"}])
