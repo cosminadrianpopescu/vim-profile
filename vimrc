@@ -79,6 +79,9 @@ let g:sync_default_args = '--recursive'
 let g:wintabs_wipeout_buffer_onclose = 1
 let g:EasyMotion_skipfoldedline = 0
 
+let g:sw_exe = 'java -jar /home/lixa/programs/sources/sql-workbench/sqlworkbench.jar'
+let g:sw_config_dir = '/home/lixa/.sqlworkbench/'
+
 let @o = ':SWDbExplorer '
 let @c = ':SWDbExplorerClose'
 
