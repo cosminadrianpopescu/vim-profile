@@ -121,7 +121,7 @@ autocmd BufWritePost * setl fdm=syntax
 " ================================================================================
 " Mappings
 nmap <Leader>f :echo @%<cr>
-nnoremap <Leader>p byw:PhpSearch -p <C-R>"<cr>
+""nnoremap <Leader>p byw:PhpSearch -p <C-R>"<cr>
 imap kk <C-R>"
 imap kj <Esc>
 imap <C-l> -<Esc>vy39po
@@ -179,7 +179,7 @@ vmap <leader>c <esc>:call feedkeys("\e`<i/*\e`>a*/\e")<cr>
 nmap <leader>tw :%s/\v\s+$//ge \| :%s/\t/\=TabSpaces($TABSTOP)/ge \| :w<cr>
 imap <Esc>oC <Esc>li
 nmap <Leader><F3> :let @/ = "\\<" . expand("<cword>") . "\\>"<cr>
-nmap <Leader>p :echo b:profile<cr>
+nnoremap <Leader>p :echo b:profile<cr>
 map <S-Insert> <MiddleMouse>
 map! <S-Insert> <MiddleMouse>
 
