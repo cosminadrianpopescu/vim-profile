@@ -278,3 +278,4 @@ so ~/.vim/colors.vim
 
 call sw#dbexplorer#add_tab('*', 'DB Links', 'L', 'select db_link, username, created  from user_db_links;', [{'title': 'Show the host', 'shortcut': 'H', 'command': "select host from user_db_links where db_link = '%object%'"}])
 call sw#dbexplorer#add_tab('*', 'Row Counts', 'W', 'WbRowCount;', [])
+call sw#dbexplorer#add_tab('*', 'User Jobs', 'J', 'select job_name, job_creator, start_date, repeat_interval from user_scheduler_jobs', [{'title': 'Job source', 'shortcut': 'S', 'command': "select job_action from user_scheduler_jobs where job_name = '%object%'"}])
