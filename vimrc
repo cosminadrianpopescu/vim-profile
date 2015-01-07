@@ -85,6 +85,8 @@ let g:sw_config_dir = '/home/lixa/.sqlworkbench/'
 let @o = ':SWDbExplorer '
 let @c = ':SWDbExplorerClose'
 let @s = ':SWSqlOpen '
+let @r = ':SWSqlBufferRestore'
+let @d = ':SWDbExplorerRestore'
 
 if $OS =~ '\c\vwindows'
 	let g:sw_plugin_path = 'e:/.vim/bundle/vim-sqlworkbench/'
