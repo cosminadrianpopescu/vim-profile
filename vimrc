@@ -120,6 +120,9 @@ autocmd FileType jsp set filetype=xml
 autocmd InsertEnter * setlocal foldmethod=manual
 autocmd BufWritePost * setl fdm=syntax
 
+autocmd FileType java nnoremap <leader>g :JavaSearchContext -x implementors<cr>
+autocmd FileType php nnoremap <leader>g :PhpSearchContext<cr>
+
 " ================================================================================
 " Mappings
 nmap <Leader>f :echo @%<cr>
@@ -153,8 +156,6 @@ nmap <Leader>N :tabn
 nmap M m$
 nnoremap / /\v\c
 cnoremap %s %s/\v
-nmap <Leader>g :JavaSearchContext<cr>
-nmap <Leader>i :JavaSearchContext -x implementors<cr>
 inoremap <C-@> <C-x><C-u><C-p>_
 "Mappings of cursors
 imap <left> <nop>
