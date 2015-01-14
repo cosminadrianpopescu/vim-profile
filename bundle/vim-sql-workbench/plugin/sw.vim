@@ -140,7 +140,14 @@ if (!exists('g:extra_sw_tabs'))
     let g:extra_sw_tabs = {}
 endif
 
-let g:sw_instance_id = strftime('%s')
+if (!exists('g:sw_asynchronious'))
+	let g:sw_asynchronious = 0
+	if !exists('g:vim_exe')
+		let g:sw_vim_exe = 'vim'
+	endif
+endif
+
+let g:sw_instance_id = localtime()
 
 if !exists('g:sw_dbexplorer_panel')
     let file = expand('<sfile>:p:h') . '/../resources/dbexplorer.vim'

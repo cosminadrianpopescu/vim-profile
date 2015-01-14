@@ -87,6 +87,8 @@ function! sw#autocomplete#extract_current_sql()
         endif
     endif
 
+	""let sql = s:eliminate_sql_comments(sql)
+
     if sql =~ '\v\c<union>'
         let sqls = split(sql, '\v\c<union[\s \t]*(all)?>')
         for _sql in sqls

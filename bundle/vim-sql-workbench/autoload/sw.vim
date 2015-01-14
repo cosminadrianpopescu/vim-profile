@@ -21,6 +21,40 @@ if !exists('g:Sw_unique_id')
     let g:Sw_unique_id = 0
 endif
 
+let s:wake_vim_cmd = ''
+
+if exists('v:servername')
+	if v:servername != ''
+		let s:wake_vim_cmd = g:sw_vim_exe . ' --servername ' . v:servername
+	endif
+endif
+
+function! s:async()
+	if g:sw_asynchronious
+		if exists('v:servername')
+			if v:servername != ''
+				return 1
+			endif
+		endif
+	endif
+
+	return 0
+endfunction
+
+function! s:get_wake_vim_cmd()
+	return s:wake_vim_cmd . ' --remote-send "<C-\><C-N>:call sw#async_result()<cr>"'
+endfunction
+
+function! sw#async_result()
+	throw 'async result'
+endfunction
+
+function! s:on_windows()
+	if exists('v:progname')
+		return v:progname =~ '\v\.exe$'
+	endif
+endfunction
+
 " Executes a shell command{{{1
 function! sw#do_shell(command)
     let prefix = ''
@@ -28,7 +62,31 @@ function! sw#do_shell(command)
         let prefix = 'silent'
     endif
 
-    execute prefix . ' !clear && echo Executting && cat ' . g:sw_tmp . '/' . s:input_file() . ' && ' . a:command
+	if s:async()
+		if exists('v:progname')
+			let file = g:sw_tmp . '/' . s:async_input_file() . '.bat'
+			let commands = [a:command, s:get_wake_vim_cmd()]
+			if s:on_windows()
+				if exists('g:loaded_dispatch')
+					if g:loaded_dispatch
+						call writefile(commands, file)
+						execute "Start! " . file
+						return 1
+					endif
+				endif
+			else
+				call writefile(commands, file)
+				execute prefix . ' !bash ' . file . ' &'
+				return 1
+			endif
+		endif
+	endif
+	if s:on_windows()
+		execute prefix . ' !' . a:command
+	else
+		execute prefix . ' !clear && echo Executting && cat ' . g:sw_tmp . '/' . s:input_file() . ' && ' . a:command
+	endif
+	return 0
 endfunction
 
 function! s:get_profile(profile)
@@ -47,6 +105,10 @@ endfunction
 
 function! s:output_file()
     return 'sw-result-' . g:sw_instance_id
+endfunction
+
+function! s:async_input_file()
+	return 'sw-async-' . g:sw_instance_id
 endfunction
 
 " Executes an sql command{{{1
@@ -96,40 +158,46 @@ function! sw#execute_sql(profile, command, ...)
     let g:sw_last_command = c
     let lines = split(a:command, "\n")
     call writefile(lines, g:sw_tmp . '/' . s:input_file())
-    call sw#do_shell(c)
-    redraw!
-    let result = readfile(g:sw_tmp . '/' . s:output_file())
-    let touch_result = 1
+	" If do_shell returns 0, it means that the command was not executed
+	" asynchroniously
+	if (!sw#do_shell(c))
+		redraw!
+		let result = readfile(g:sw_tmp . '/' . s:output_file())
+		let touch_result = 1
 
-    if a:0
-        let touch_result = a:1
-    endif
+		if a:0
+			let touch_result = a:1
+		endif
 
-    if (touch_result && len(result) > 0)
-        if result[len(result) - 1] =~ '\v\c^\([0-9]+ row[s]?\)$'
-            let result[0] = result[len(result) - 1]
-            unlet result[len(result) - 1]
-        else
-            unlet result[0]
-        endif
-    endif
+		if (touch_result && len(result) > 0)
+			if result[len(result) - 1] =~ '\v\c^\([0-9]+ row[s]?\)$'
+				let result[0] = result[len(result) - 1]
+				unlet result[len(result) - 1]
+			else
+				unlet result[0]
+			endif
+		endif
 
-    ""let i = 0
-    ""for row in result
-    ""    if row == a:command
-    ""        unlet result[i]
-    ""        break 
-    ""    endif
-    ""    let i = i + 1
-    ""endfor
+		""let i = 0
+		""for row in result
+		""    if row == a:command
+		""        unlet result[i]
+		""        break 
+		""    endif
+		""    let i = i + 1
+		""endfor
 
-    if (g:sw_show_command)
-        call add(result, "")
-        call add(result, '-----------------------------------------------------------------------------')
-        call add(result, ' Command executed: ' . a:command)
-    endif
+		if (g:sw_show_command)
+			call add(result, "")
+			call add(result, '-----------------------------------------------------------------------------')
+			call add(result, ' Command executed: ' . a:command)
+		endif
 
-    return result
+		return result
+	endif
+
+	redraw!
+	return []
 endfunction
 
 " Exports as ods{{{1

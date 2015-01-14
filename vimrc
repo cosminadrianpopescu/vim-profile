@@ -78,6 +78,7 @@ let g:togglecursor_leave = 'blinking_line'
 let g:sync_default_args = '--recursive'
 let g:wintabs_wipeout_buffer_onclose = 1
 let g:EasyMotion_skipfoldedline = 0
+""let g:sw_asynchronious = 1
 
 let g:sw_exe = 'java -jar /home/lixa/programs/sources/sql-workbench/sqlworkbench.jar'
 let g:sw_config_dir = '/home/lixa/.sqlworkbench/'
@@ -93,6 +94,7 @@ if $OS =~ '\c\vwindows'
 	let g:sw_exe = 'c:/Pgm/workbench/sqlwbconsole.exe'
 	let g:sw_tmp = 'e:/tmp'
 	let g:sw_config_dir = 'z:/.sqlworkbench/'
+	let g:sw_vim_exe = 'DISPLAY=localhost:0 /opt/vim/bin/vim'
 endif
 
 ""if $CHANGE_CURSOR == "1"
