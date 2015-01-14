@@ -65,6 +65,7 @@ function! s:do_open_buffer()
     call sw#session#set_buffer_variable('feedback', g:sw_feedback)
     call sw#session#set_buffer_variable('unique_id', sw#generate_unique_id())
     call sw#session#autocommand('BufEnter', 'sw#sqlwindow#set_statement_shortcuts()')
+    call sw#session#autocommand('BufEnter', 'sw#check_async_result()')
     call sw#sqlwindow#set_statement_shortcuts()
     ""normal gg
     ""put ='-- Current profile: ' . b:profile
@@ -390,20 +391,8 @@ function! s:display_resultsets()
     call sw#session#set_buffer_variable('state', 'resultsets')
 endfunction
 
-function! sw#sqlwindow#execute_sql(sql)
-    let w:auto_added1 = "-- auto\n"
-    let w:auto_added2 = "-- end auto\n"
-
-    call s:check_sql_buffer()
-    let _sql = a:sql
-    if (b:display_result_as != 'tab')
-        let _sql = w:auto_added1 . 'WbDisplay ' . b:display_result_as . "\n" . b:delimiter . "\n" . w:auto_added2 . _sql
-    endif
-    if (b:max_results != 0)
-        let _sql = w:auto_added1 . 'set maxrows = ' . b:max_results . "\n" . b:delimiter . "\n" . w:auto_added2 . _sql
-    endif
-    let result = sw#execute_sql(b:profile, _sql, 0)
-
+function! s:process_result(result)
+    let result = a:result
     let uid = b:unique_id
     let name = "__SQLResult__-" . b:profile . '__' . b:unique_id
     let profile = b:profile
@@ -482,6 +471,43 @@ function! sw#sqlwindow#execute_sql(sql)
     normal ggdd
     setlocal nomodifiable
     wincmd t
+endfunction
+
+function! sw#sqlwindow#on_async_result()
+    let result = sw#get_sql_result(0)
+    call s:process_result(result)
+endfunction
+
+function! sw#sqlwindow#on_async_kill()
+    let result = []
+    call s:process_result(result)
+endfunction
+
+function! sw#sqlwindow#execute_sql(sql)
+    let w:auto_added1 = "-- auto\n"
+    let w:auto_added2 = "-- end auto\n"
+
+    call s:check_sql_buffer()
+    let _sql = a:sql
+    if (b:display_result_as != 'tab')
+        let _sql = w:auto_added1 . 'WbDisplay ' . b:display_result_as . "\n" . b:delimiter . "\n" . w:auto_added2 . _sql
+    endif
+    if (b:max_results != 0)
+        let _sql = w:auto_added1 . 'set maxrows = ' . b:max_results . "\n" . b:delimiter . "\n" . w:auto_added2 . _sql
+    endif
+    let b:on_async_result = 'sw#sqlwindow#on_async_result'
+    let b:on_async_kill = 'sw#sqlwindow#on_async_kill'
+    let result = sw#execute_sql(b:profile, _sql, 0)
+
+    if len(result) != 0
+        unlet b:on_async_result
+        unlet b:on_async_kill
+        call s:process_result(result)
+    else
+        if sw#is_async()
+            call s:process_result(['Processing a command. Please wait...'])
+        endif
+    endif
 endfunction
 
 function! sw#sqlwindow#get_object_info()

@@ -22,14 +22,27 @@ if !exists('g:Sw_unique_id')
 endif
 
 let s:wake_vim_cmd = ''
+let g:sw_async_ended = []
 
-if exists('v:servername')
+if exists('v:servername') && exists('g:sw_vim_exe')
 	if v:servername != ''
 		let s:wake_vim_cmd = g:sw_vim_exe . ' --servername ' . v:servername
 	endif
 endif
 
-function! s:async()
+function! s:get_buff_unique_id()
+    if exists('b:unique_id')
+        return b:unique_id
+    endif
+
+    if exists('b:r_unique_id')
+        return b:r_unique_id
+    endif
+
+    return -1
+endfunction
+
+function! sw#is_async()
 	if g:sw_asynchronious
 		if exists('v:servername')
 			if v:servername != ''
@@ -42,15 +55,61 @@ function! s:async()
 endfunction
 
 function! s:get_wake_vim_cmd()
-	return s:wake_vim_cmd . ' --remote-send "<C-\><C-N>:call sw#async_result()<cr>"'
+	return s:wake_vim_cmd . ' --remote-send "<C-\><C-N>:call sw#got_async_result(' . s:get_buff_unique_id() . ')<cr>"'
 endfunction
 
-function! sw#async_result()
-	if exists('g:on_async_result')
-		let func = g:on_async_result
-		let g:on_async_result = ''
-		execute "call " . func . "()"
-	endif
+function! sw#async_end()
+    let idx = index(g:sw_async_ended, s:get_buff_unique_id())
+    if idx != -1
+        unlet g:sw_async_ended[idx]
+    endif
+    if exists('b:async_on_progress')
+        unlet b:async_on_progress
+        if exists('b:on_async_result')
+            let func = b:on_async_result
+            call sw#session#unset_buffer_variable('on_async_result')
+            execute "call " . func . "()"
+        endif
+
+        call delete(g:sw_tmp . '/' . s:input_file())
+        call delete(g:sw_tmp . '/' . s:output_file())
+        call delete(g:sw_tmp . '/' . s:async_input_file())
+    endif
+endfunction
+
+function! sw#kill_current_command()
+    let idx = index(g:sw_async_ended, s:get_buff_unique_id())
+    if idx != -1
+        unlet g:sw_async_ended[idx]
+    endif
+    if exists('b:async_on_progress')
+        unlet b:async_on_progress
+    endif
+    if exists('b:on_async_kill')
+        let func = b:on_async_kill
+        call sw#session#unset_buffer_variable('on_async_kill')
+        execute "call " . func . "()"
+    endif
+
+    call delete(g:sw_tmp . '/' . s:input_file())
+    call delete(g:sw_tmp . '/' . s:output_file())
+    call delete(g:sw_tmp . '/' . s:async_input_file())
+endfunction
+
+function! sw#check_async_result()
+    let uid = s:get_buff_unique_id()
+    if uid != -1
+        if index(g:sw_async_ended, uid) != -1
+            call sw#async_end()
+        endif
+    endif
+endfunction
+
+function! sw#got_async_result(unique_id)
+    call add(g:sw_async_ended, a:unique_id)
+    if s:get_buff_unique_id() == a:unique_id
+        call sw#async_end()
+    endif
 endfunction
 
 function! s:on_windows()
@@ -66,10 +125,10 @@ function! sw#do_shell(command)
         let prefix = 'silent'
     endif
 
-	if s:async()
+	if sw#is_async()
 		let async = 0
 		if exists('v:progname')
-			let file = g:sw_tmp . '/' . s:async_input_file() . '.bat'
+			let file = g:sw_tmp . '/' . s:async_input_file()
 			let commands = [a:command, s:get_wake_vim_cmd()]
 			if s:on_windows()
 				if exists('g:loaded_dispatch')
@@ -80,13 +139,15 @@ function! sw#do_shell(command)
 					endif
 				endif
 			else
+                let shell = &shell 
 				call writefile(commands, file)
-				execute prefix . ' !bash ' . file . ' &'
+				execute prefix . ' !' . shell . ' ' . file . ' &'
 				let async = 1
 			endif
 		endif
 
 		if async
+            let b:async_on_progress = 1
 			return 1
 		endif
 	endif
@@ -109,15 +170,15 @@ function! s:get_profile(profile)
 endfunction
 
 function! s:input_file()
-    return 'sw-sql-' . g:sw_instance_id
+    return 'sw-sql-' . g:sw_instance_id . (sw#is_async() ? '-' . s:get_buff_unique_id() : '')
 endfunction
 
 function! s:output_file()
-    return 'sw-result-' . g:sw_instance_id
+    return 'sw-result-' . g:sw_instance_id . (sw#is_async() ? '-' . s:get_buff_unique_id() : '')
 endfunction
 
 function! s:async_input_file()
-	return 'sw-async-' . g:sw_instance_id
+	return 'sw-async-' . g:sw_instance_id . (sw#is_async() ? '-' . s:get_buff_unique_id() : '') . '.bat'
 endfunction
 
 function! sw#get_sql_result(touch_result)
@@ -153,6 +214,13 @@ endfunction
 
 " Executes an sql command{{{1
 function! sw#execute_sql(profile, command, ...)
+    if sw#is_async()
+        if exists('b:async_on_progress')
+            if b:async_on_progress
+                throw 'There is a command in progress for this buffer. Please wait for it to finish.'
+            endif
+        endif
+    endif
     execute "silent !echo '' >" . g:sw_tmp . '/' . s:output_file()
     let delimiter = ''
     if (exists('b:delimiter'))

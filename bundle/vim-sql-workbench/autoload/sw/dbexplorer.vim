@@ -360,19 +360,24 @@ function! sw#dbexplorer#show_panel(profile, ...)
         let connection = a:1
     endif
 
+    let uid = sw#generate_unique_id()
+
     execute "badd " . name
     execute "buffer " . name
     call s:set_special_buffer(a:profile, connection)
+    call sw#session#set_buffer_variable('unique_id', uid)
     nnoremap <buffer> <silent> E :call sw#dbexplorer#export()<cr>
     nnoremap <buffer> <silent> B :call <SID>open_in_new_buffer()<cr>
     execute "silent! split __Info__-" . a:profile
     resize 7
     "let id = matchadd('SWHighlights', '\v^([^\(]+\([A-Za-z]+\)( \| )?)+$')
     call s:set_special_buffer(a:profile, connection)
+    call sw#session#set_buffer_variable('unique_id', uid)
     call s:set_highlights()
     wincmd b
     execute "silent! vsplit __DBExplorer__-" . a:profile
     call s:set_special_buffer(a:profile, connection)
+    call sw#session#set_buffer_variable('unique_id', uid)
     vertical resize 60
     ""call s:set_objects_buffer()
     call s:iterate('s:get_first_tab')
