@@ -46,7 +46,11 @@ function! s:get_wake_vim_cmd()
 endfunction
 
 function! sw#async_result()
-	throw 'async result'
+	if exists('g:on_async_result')
+		let func = g:on_async_result
+		let g:on_async_result = ''
+		execute "call " . func . "()"
+	endif
 endfunction
 
 function! s:on_windows()
@@ -63,6 +67,7 @@ function! sw#do_shell(command)
     endif
 
 	if s:async()
+		let async = 0
 		if exists('v:progname')
 			let file = g:sw_tmp . '/' . s:async_input_file() . '.bat'
 			let commands = [a:command, s:get_wake_vim_cmd()]
@@ -71,14 +76,18 @@ function! sw#do_shell(command)
 					if g:loaded_dispatch
 						call writefile(commands, file)
 						execute "Start! " . file
-						return 1
+						let async = 1
 					endif
 				endif
 			else
 				call writefile(commands, file)
 				execute prefix . ' !bash ' . file . ' &'
-				return 1
+				let async = 1
 			endif
+		endif
+
+		if async
+			return 1
 		endif
 	endif
 	if s:on_windows()
@@ -109,6 +118,37 @@ endfunction
 
 function! s:async_input_file()
 	return 'sw-async-' . g:sw_instance_id
+endfunction
+
+function! sw#get_sql_result(touch_result)
+	let result = readfile(g:sw_tmp . '/' . s:output_file())
+	let touch_result = a:touch_result
+
+	if (touch_result && len(result) > 0)
+		if result[len(result) - 1] =~ '\v\c^\([0-9]+ row[s]?\)$'
+			let result[0] = result[len(result) - 1]
+			unlet result[len(result) - 1]
+		else
+			unlet result[0]
+		endif
+	endif
+
+	""let i = 0
+	""for row in result
+	""    if row == a:command
+	""        unlet result[i]
+	""        break 
+	""    endif
+	""    let i = i + 1
+	""endfor
+
+	if (g:sw_show_command)
+		call add(result, "")
+		call add(result, '-----------------------------------------------------------------------------')
+		call add(result, ' Command executed: ' . a:command)
+	endif
+
+	return result
 endfunction
 
 " Executes an sql command{{{1
@@ -162,38 +202,11 @@ function! sw#execute_sql(profile, command, ...)
 	" asynchroniously
 	if (!sw#do_shell(c))
 		redraw!
-		let result = readfile(g:sw_tmp . '/' . s:output_file())
 		let touch_result = 1
-
 		if a:0
 			let touch_result = a:1
 		endif
-
-		if (touch_result && len(result) > 0)
-			if result[len(result) - 1] =~ '\v\c^\([0-9]+ row[s]?\)$'
-				let result[0] = result[len(result) - 1]
-				unlet result[len(result) - 1]
-			else
-				unlet result[0]
-			endif
-		endif
-
-		""let i = 0
-		""for row in result
-		""    if row == a:command
-		""        unlet result[i]
-		""        break 
-		""    endif
-		""    let i = i + 1
-		""endfor
-
-		if (g:sw_show_command)
-			call add(result, "")
-			call add(result, '-----------------------------------------------------------------------------')
-			call add(result, ' Command executed: ' . a:command)
-		endif
-
-		return result
+		return sw#get_sql_result(touch_result)
 	endif
 
 	redraw!

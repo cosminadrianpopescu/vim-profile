@@ -119,17 +119,7 @@ function! sw#autocomplete#set_cache_default()
     let g:Str_sw_autocomplete_default_procs = string(g:sw_autocomplete_default_procs)
 endfunction
 
-function! sw#autocomplete#cache()
-    if (!exists('b:profile'))
-        return
-    endif
-    call sw#session#init_section()
-    let sql = "WbSchemaReport -file=" . g:sw_tmp . "/sw_report.xml -objects=% -types='TABLE,VIEW,SYSTEM VIEW,MATERIALIZED VIEW,TEMPORARY TABLE,SYNONYM' -stylesheet=" . s:script_path . "resources/wbreport2vim.xslt -xsltOutput=" . g:sw_tmp . "/sw_report.vim;\n"
-    let sql = sql . "WbExport -type=xml -file=" . g:sw_tmp . "/sw_procs.xml -stylesheet=" . s:script_path . "resources/wbprocedures2vim.xslt -lineEnding=lf -xsltOutput=" . g:sw_tmp . "/sw_procs.vim;\n"
-    let sql = sql . "WBListProcs;"
-
-    let result = sw#execute_sql(b:profile, sql)
-
+function! sw#autocomplete#got_result()
     if !filereadable(g:sw_tmp . "/sw_report.xml")
         throw "There is a problem clearing the autocomplete cache. Please check your connection"
     endif
@@ -140,6 +130,23 @@ function! sw#autocomplete#cache()
     call sw#session#set_buffer_variable('autocomplete_procs', g:_procedures)
     unlet g:_procedures
     setlocal omnifunc=sw#autocomplete#perform
+	echomsg "Autocomplete activated"
+endfunction
+
+function! sw#autocomplete#cache()
+    if (!exists('b:profile'))
+        return
+    endif
+    call sw#session#init_section()
+    let sql = "WbSchemaReport -file=" . g:sw_tmp . "/sw_report.xml -objects=% -types='TABLE,VIEW,SYSTEM VIEW,MATERIALIZED VIEW,TEMPORARY TABLE,SYNONYM' -stylesheet=" . s:script_path . "resources/wbreport2vim.xslt -xsltOutput=" . g:sw_tmp . "/sw_report.vim;\n"
+    let sql = sql . "WbExport -type=xml -file=" . g:sw_tmp . "/sw_procs.xml -stylesheet=" . s:script_path . "resources/wbprocedures2vim.xslt -lineEnding=lf -xsltOutput=" . g:sw_tmp . "/sw_procs.vim;\n"
+    let sql = sql . "WBListProcs;"
+
+	let g:on_async_result = 'sw#autocomplete#got_result'
+    let result = sw#execute_sql(b:profile, sql)
+	if !g:sw_asynchronious
+		call sw#autocomplete#got_result()
+	endif
 endfunction
 
 function! s:get_cache_tables()
