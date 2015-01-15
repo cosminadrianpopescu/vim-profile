@@ -67,7 +67,6 @@ function! sw#async_end()
         unlet b:async_on_progress
         if exists('b:on_async_result')
             let func = b:on_async_result
-            call sw#session#unset_buffer_variable('on_async_result')
             execute "call " . func . "()"
         endif
 
@@ -84,6 +83,9 @@ function! sw#kill_current_command()
     endif
     if exists('b:async_on_progress')
         unlet b:async_on_progress
+    endif
+    if exists('b:on_async_result')
+        unlet b:on_async_result
     endif
     if exists('b:on_async_kill')
         let func = b:on_async_kill
@@ -289,7 +291,6 @@ function! sw#export_ods(profile, command)
         let location = input('Please select a destination file: ', '', 'file')
         if (location != '')
             let queries = sw#sql_split(a:command)
-            echomsg string(queries)
             call writefile(['WbExport -type=' . format . ' -file=' . location . ';', queries[len(queries) - 1]], g:sw_tmp . '/' . s:input_file())
             let c = g:sw_exe . s:get_profile(a:profile) . ' -displayResult=true -script=' . g:sw_tmp . '/' . s:input_file()
             call sw#do_shell(c)
@@ -460,9 +461,13 @@ endfunction
 
 " Goes to a window identified by a buffer name{{{1
 function! sw#goto_window(name)
+    let crt = bufname('%')
     if bufwinnr(a:name) != -1
         while bufname('%') != a:name
             wincmd w
+            if bufname('%') == crt
+                return
+            endif
         endwhile
     endif
 endfunction

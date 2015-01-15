@@ -476,10 +476,11 @@ endfunction
 function! sw#sqlwindow#on_async_result()
     let result = sw#get_sql_result(0)
     call s:process_result(result)
+    ""call feedkeys(':echo ')
 endfunction
 
 function! sw#sqlwindow#on_async_kill()
-    let result = []
+    let result = ['Interrupted asynchronious command...']
     call s:process_result(result)
 endfunction
 
