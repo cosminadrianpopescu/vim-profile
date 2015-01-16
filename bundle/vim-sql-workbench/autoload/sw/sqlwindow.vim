@@ -398,10 +398,11 @@ function! s:process_result(result)
     let profile = b:profile
 
     if (bufexists(name))
-        wincmd b
+        call sw#goto_window(name)
         setlocal modifiable
         normal ggdG
     else
+        let uid = b:unique_id
         let s_below = &splitbelow
         set splitbelow
         execute "split " . name

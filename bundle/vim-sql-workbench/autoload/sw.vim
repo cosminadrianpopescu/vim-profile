@@ -30,6 +30,18 @@ if exists('v:servername') && exists('g:sw_vim_exe')
 	endif
 endif
 
+function! sw#find_buffer_by_unique_id(uid)
+    for k in keys(g:sw_session)
+        if has_key(g:sw_session[k], 'unique_id')
+            if g:sw_session[k].unique_id == a:uid
+                return k
+            endif
+        endif
+    endfor
+
+    return ''
+endfunction
+
 function! s:get_buff_unique_id()
     if exists('b:unique_id')
         return b:unique_id
