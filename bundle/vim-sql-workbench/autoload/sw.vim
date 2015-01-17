@@ -67,7 +67,7 @@ function! sw#is_async()
 endfunction
 
 function! s:get_wake_vim_cmd()
-	return s:wake_vim_cmd . ' --remote-send "<C-\><C-N>:call sw#got_async_result(' . s:get_buff_unique_id() . ')<cr>"'
+	return s:wake_vim_cmd . ' --remote-expr "sw#got_async_result(' . s:get_buff_unique_id() . ')"'
 endfunction
 
 function! sw#async_end()
@@ -122,8 +122,20 @@ endfunction
 function! sw#got_async_result(unique_id)
     call add(g:sw_async_ended, a:unique_id)
     if s:get_buff_unique_id() == a:unique_id
-        call sw#async_end()
+        if mode() == 'i' || mode() == 'R'
+            let m = mode()
+            if m == 'i'
+                let m = 'a'
+            endif
+            call sw#async_end()
+            execute "normal " . m
+        elseif mode() == 'V' || mode == 'v'
+        else
+            call sw#async_end()
+        endif
     endif
+    redraw!
+    return ''
 endfunction
 
 function! s:on_windows()
