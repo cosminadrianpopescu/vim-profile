@@ -111,12 +111,20 @@ function! s:execute_file(f)
 	endfor
 endfunction
 
-function! sw#autocomplete#set_cache_default()
-    call sw#autocomplete#cache()
+function s:set_default()
     let g:sw_autocomplete_default_tables = b:autocomplete_tables
     let g:sw_autocomplete_default_procs = b:autocomplete_procs
     let g:Str_sw_autocomplete_default_tables = string(g:sw_autocomplete_default_tables)
     let g:Str_sw_autocomplete_default_procs = string(g:sw_autocomplete_default_procs)
+endfunction
+
+function! sw#autocomplete#set_cache_default()
+    call sw#autocomplete#cache()
+    if sw#is_async()
+        let b:__set_default = 1
+    else
+        call s:set_default()
+    endif
 endfunction
 
 function! sw#autocomplete#got_result()
@@ -130,6 +138,10 @@ function! sw#autocomplete#got_result()
     call sw#session#set_buffer_variable('autocomplete_procs', g:_procedures)
     unlet g:_procedures
     setlocal omnifunc=sw#autocomplete#perform
+    if exists('b:__set_default')
+        call s:set_default()
+        unlet b:__set_default
+    endif
 	echomsg "Autocomplete activated"
 endfunction
 
@@ -289,7 +301,6 @@ function! sw#autocomplete#perform(findstart, base)
         elseif b:autocomplete_type == 'select' || b:autocomplete_type == 'update'
             " If a select, first get its tables
             let tables = s:get_tables(sql, [])
-            echomsg string(tables)
             " If we returned an empty string, then no autocomplete
             if string(tables) == ""
                 return []
@@ -333,7 +344,7 @@ function! sw#autocomplete#perform(findstart, base)
 
                 " If we are between select and from or after where, then or in
                 " a using, return fields to autocomplete
-                if sql =~ '\v\cselect.*#cursor#.*from' || sql =~ '\v\cwhere.*#cursor#' || sql =~ '\v\cusing[\s\t ]*\([^\)]*#cursor#' || sql =~ '\v\cupdate.*<(set|where)>.*#cursor#'
+                if sql =~ '\v\cselect.*#cursor#.*from' || sql =~ '\v\c(where|group|having).*#cursor#' || sql =~ '\v\cusing[\s\t ]*\([^\)]*#cursor#' || sql =~ '\v\cupdate.*<(set|where)>.*#cursor#'
                     let result = []
                     for table in tables
                         for field in table['fields']
@@ -354,6 +365,10 @@ function! sw#autocomplete#perform(findstart, base)
                             endif
                         endfor
                     endfor
+
+                    if len(result) == 0
+                        return sw#autocomplete#all_objects(a:base)
+                    endif
 
                     return result
                 else

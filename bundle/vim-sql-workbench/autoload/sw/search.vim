@@ -170,6 +170,7 @@ function! s:process_search_result(result, columns)
         call sw#goto_window('__SQL__-' . b:profile)
     else
         call sw#goto_window(s:get_resultset_name())
+        let __name = sw#find_buffer_by_unique_id(b:r_unique_id)
     endif
     if exists('b:match_id')
         try

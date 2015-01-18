@@ -174,7 +174,7 @@ endfunction
 
 function! sw#session#restore_sqlbuffer()
     call sw#session#check()
-    wincmd b
+    call sw#goto_window(sw#sqlwindow#get_resultset_name())
     call sw#session#check()
-    wincmd t
+    call sw#sqlwindow#goto_statement_buffer()
 endfunction

@@ -88,6 +88,20 @@ function! sw#async_end()
     endif
 endfunction
 
+function! sw#reset_current_command()
+    let idx = index(g:sw_async_ended, s:get_buff_unique_id())
+    if idx != -1
+        unlet g:sw_async_ended[idx]
+    endif
+    if exists('b:async_on_progress')
+        unlet b:async_on_progress
+    endif
+
+    call delete(g:sw_tmp . '/' . s:input_file())
+    call delete(g:sw_tmp . '/' . s:output_file())
+    call delete(g:sw_tmp . '/' . s:async_input_file())
+endfunction
+
 function! sw#kill_current_command()
     let idx = index(g:sw_async_ended, s:get_buff_unique_id())
     if idx != -1
@@ -129,7 +143,14 @@ function! sw#got_async_result(unique_id)
             endif
             call sw#async_end()
             execute "normal " . m
-        elseif mode() == 'V' || mode == 'v'
+        elseif mode() == 'V' || mode() == 'v' || mode() == 's'
+            let m = mode()
+            normal 
+            call sw#async_end()
+            normal gv
+            if m == 's'
+                normal 
+            endif
         else
             call sw#async_end()
         endif
@@ -487,7 +508,7 @@ endfunction
 function! sw#goto_window(name)
     let crt = bufname('%')
     if bufwinnr(a:name) != -1
-        while bufname('%') != a:name
+        while bufname('%') != a:name && sw#session#buffer_name() != a:name
             wincmd w
             if bufname('%') == crt
                 return

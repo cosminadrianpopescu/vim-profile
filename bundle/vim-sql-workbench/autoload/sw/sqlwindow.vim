@@ -17,13 +17,22 @@
 "
 "============================================================================"
 
-let s:pattern_resultset_start = '\v^([\-]+\+)+([\-]*)$'
+let s:pattern_resultset_start = '\v^([\-]+\+?)+([\-]*)$'
 let s:pattern_empty_line = '\v^[\r \s\t]*$'
 let s:script_path = expand('<sfile>:p:h') . '/../../'
 
 function! s:check_sql_buffer()
     if (!exists('b:profile'))
         throw "The current buffer is not an SQL Workbench buffer. Open it using the SWOpenSQL command."
+    endif
+endfunction
+
+function! sw#sqlwindow#goto_statement_buffer()
+    if (exists('b:r_unique_id'))
+        let b = sw#find_buffer_by_unique_id(b:r_unique_id)
+        if b != ''
+            call sw#goto_window(b)
+        endif
     endif
 endfunction
 
@@ -195,7 +204,7 @@ function! sw#sqlwindow#toggle_messages()
     if b:state != 'resultsets' && b:state != 'messages'
         return 
     endif
-    wincmd b
+    call sw#goto_window(sw#sqlwindow#get_resultset_name())
     if b:state == 'resultsets'
         call sw#session#set_buffer_variable('position', getpos('.'))
     endif
@@ -471,7 +480,10 @@ function! s:process_result(result)
 
     normal ggdd
     setlocal nomodifiable
-    wincmd t
+    let b = sw#find_buffer_by_unique_id(b:r_unique_id)
+    if b != ''
+        call sw#goto_window(b)
+    endif
 endfunction
 
 function! sw#sqlwindow#on_async_result()
@@ -519,11 +531,11 @@ function! sw#sqlwindow#get_object_info()
 
     let obj = expand('<cword>')
     let sql = "desc " . obj
-    wincmd t
+    call sw#sqlwindow#goto_statement_buffer()
     call sw#sqlwindow#execute_sql(sql)
 endfunction
 
-function! s:get_resultset_name()
+function! sw#sqlwindow#get_resultset_name()
     if exists('b:profile') && exists('b:unique_id')
         return '__SQLResult__-' . b:profile . '__' . b:unique_id
     endif
@@ -538,7 +550,7 @@ function! sw#sqlwindow#close_all_result_sets()
         let name = bufname('%')
         let rs_name = ''
         if exists('b:profile')
-            let rs_name = s:get_resultset_name()
+            let rs_name = sw#sqlwindow#get_resultset_name()
         endif
         for k in keys(g:sw_session)
             if k =~ '\v^__SQLResult__' && k != rs_name
@@ -583,7 +595,7 @@ function! sw#sqlwindow#check_hidden_results()
                     endif
                     normal ggdd
                     setlocal nomodifiable
-                    wincmd t
+                    call sw#sqlwindow#goto_statement_buffer()
                 endif
             endif
         endif
@@ -597,6 +609,6 @@ function! sw#sqlwindow#get_object_source()
 
     let obj = expand('<cword>')
     let sql = 'WbGrepSource -searchValues="' . obj . '" -objects=' . obj . ' -types=* -useRegex=true;'
-    wincmd t
+    call sw#sqlwindow#goto_statement_buffer()
     call sw#sqlwindow#execute_sql(sql)
 endfunction

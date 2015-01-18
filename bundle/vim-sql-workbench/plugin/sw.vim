@@ -147,6 +147,10 @@ if (!exists('g:sw_asynchronious'))
 	endif
 endif
 
+"if !exists('g:sw_overwrite_current_command')
+"    let g:sw_overwrite_current_command = 0
+"endif
+
 let g:sw_instance_id = localtime()
 
 if !exists('g:sw_dbexplorer_panel')
@@ -197,6 +201,7 @@ command! SWSqlAutocomplete call sw#autocomplete#cache()
 command! SWSqlAutocompleteSetDefault call sw#autocomplete#set_cache_default()
 command! SWSqlAutocompleteWithDefault setlocal omnifunc=sw#autocomplete#perform
 command! SWSqlBufferRestore call sw#session#restore_sqlbuffer()
+command! -nargs=0 SWKillCurrentCommand call sw#kill_current_command()
 
 augroup sw
 autocmd sw BufDelete,BufWipeout * call sw#session#sync()
