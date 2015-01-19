@@ -40,7 +40,7 @@
   then load them from there, otherwise load them from a file. This way, one
   can define his own db explorer panel from scratch - *DONE*
 
-* replace wincmd with `sw#goto_window`
+* replace wincmd with `sw#goto_window` - *DONE*
 
 * parse the `profile.xml` file from sql workbench to give autocomplete for
   profile names - *DONE*

@@ -30,6 +30,18 @@ if exists('v:servername') && exists('g:sw_vim_exe')
 	endif
 endif
 
+function! sw#find_buffer_by_unique_id(uid)
+    for k in keys(g:sw_session)
+        if has_key(g:sw_session[k], 'unique_id')
+            if g:sw_session[k].unique_id == a:uid
+                return k
+            endif
+        endif
+    endfor
+
+    return ''
+endfunction
+
 function! s:get_buff_unique_id()
     if exists('b:unique_id')
         return b:unique_id
@@ -55,7 +67,7 @@ function! sw#is_async()
 endfunction
 
 function! s:get_wake_vim_cmd()
-	return s:wake_vim_cmd . ' --remote-send "<C-\><C-N>:call sw#got_async_result(' . s:get_buff_unique_id() . ')<cr>"'
+	return s:wake_vim_cmd . ' --remote-expr "sw#got_async_result(' . s:get_buff_unique_id() . ')"'
 endfunction
 
 function! sw#async_end()
@@ -74,6 +86,20 @@ function! sw#async_end()
         call delete(g:sw_tmp . '/' . s:output_file())
         call delete(g:sw_tmp . '/' . s:async_input_file())
     endif
+endfunction
+
+function! sw#reset_current_command()
+    let idx = index(g:sw_async_ended, s:get_buff_unique_id())
+    if idx != -1
+        unlet g:sw_async_ended[idx]
+    endif
+    if exists('b:async_on_progress')
+        unlet b:async_on_progress
+    endif
+
+    call delete(g:sw_tmp . '/' . s:input_file())
+    call delete(g:sw_tmp . '/' . s:output_file())
+    call delete(g:sw_tmp . '/' . s:async_input_file())
 endfunction
 
 function! sw#kill_current_command()
@@ -110,8 +136,27 @@ endfunction
 function! sw#got_async_result(unique_id)
     call add(g:sw_async_ended, a:unique_id)
     if s:get_buff_unique_id() == a:unique_id
-        call sw#async_end()
+        if mode() == 'i' || mode() == 'R'
+            let m = mode()
+            if m == 'i'
+                let m = 'a'
+            endif
+            call sw#async_end()
+            execute "normal " . m
+        elseif mode() == 'V' || mode() == 'v' || mode() == 's'
+            let m = mode()
+            normal 
+            call sw#async_end()
+            normal gv
+            if m == 's'
+                normal 
+            endif
+        else
+            call sw#async_end()
+        endif
     endif
+    redraw!
+    return ''
 endfunction
 
 function! s:on_windows()
@@ -463,7 +508,7 @@ endfunction
 function! sw#goto_window(name)
     let crt = bufname('%')
     if bufwinnr(a:name) != -1
-        while bufname('%') != a:name
+        while bufname('%') != a:name && sw#session#buffer_name() != a:name
             wincmd w
             if bufname('%') == crt
                 return
