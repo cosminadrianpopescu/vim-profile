@@ -147,6 +147,10 @@ if (!exists('g:sw_asynchronious'))
 	endif
 endif
 
+if !exists('g:sw_tab_switches_between_bottom_panels')
+	let g:sw_tab_switches_between_bottom_panels = 1
+endif
+
 "if !exists('g:sw_overwrite_current_command')
 "    let g:sw_overwrite_current_command = 0
 "endif
