@@ -153,7 +153,7 @@ nmap <Leader>b ^
 vmap <Leader>b ^
 nmap <Leader>e $
 vmap <Leader>e $
-vmap <leader>r :!sqlformat -r -<cr>
+vmap <leader>r :!sqlformat -r -kupper -<cr>
 nmap <Leader>G ggVGy<C-o><C-o>
 nmap <Leader>n :WintabsGo 
 nmap <Leader>N :tabn 
