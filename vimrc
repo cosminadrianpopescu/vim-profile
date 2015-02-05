@@ -91,6 +91,7 @@ let @r = ':SWSqlBufferRestore'
 let @d = ':SWDbExplorerRestore'
 
 if $OS =~ '\c\vwindows'
+	let g:ctrlp_user_command='/mnt/e/bin/ctrlp-find %s'
 	let g:sw_plugin_path = 'e:/.vim/bundle/vim-sql-workbench/'
 	let g:sw_exe = 'c:/Pgm/workbench/sqlwbconsole.exe'
 	let g:sw_tmp = 'e:/tmp'
