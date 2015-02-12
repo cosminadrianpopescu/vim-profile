@@ -124,7 +124,7 @@ autocmd FileType jsp set filetype=xml
 autocmd InsertEnter * setlocal foldmethod=manual
 autocmd BufWritePost * setl fdm=syntax
 
-autocmd FileType java nnoremap <leader>g :JavaSearchContext -x implementors<cr>
+autocmd FileType java nnoremap <leader>g :JavaSearchContext<cr>
 autocmd FileType php nnoremap <leader>g :PhpSearchContext<cr>
 
 " ================================================================================
@@ -158,6 +158,7 @@ vmap <leader>r :!sqlformat -r -kupper -<cr>
 nmap <Leader>G ggVGy<C-o><C-o>
 nmap <Leader>n :WintabsGo 
 nmap <Leader>N :tabn 
+nmap <Leader>: :call InsertJavaClassVariable()<cr>
 nmap M m$
 nnoremap / /\v\c
 cnoremap %s %s/\v
@@ -273,6 +274,45 @@ function! Prepare_run_all_file()
 	call s:prepare_run('\v\c^[\s\t ]*create[\s\t ]+(or[\s\t ]+replace[\s\t ]+)?(function|library|package|procedure|trigger|type)', 1)
 	normal gg
 	call s:prepare_run('\v\c^[ \s\t]*begin[ \s\t]*$', 1000)
+endfunction
+
+function! InsertJavaClassVariable()
+	let name = input("Name: ")
+	let desc = input("Description: ")
+	let type = input("Type: ")
+
+	let c = toupper(name[0])
+	let cname = c . name[1:]
+
+	put= '/**'
+	put= ' * ' . desc
+	put= ' */'
+	put= 'private ' . type . ' ' . name . ';'
+	put= ''
+	put= '/**'
+	put= ' * Created by popesad'
+	put= ' *'
+	put= ' * <p>Gets the ' . name . ' variable</p>'
+	put= ' *'
+	put= ' * @return	' . type
+	put= ' */'
+	put= 'public ' . type . ' get' . cname . '(){'
+	put= '	return this.' . name . ';'
+	put= '}'
+	put= ''
+	put= '/**'
+	put= ' * Created by popesad'
+	put= ' *'
+	put= ' * <p>Sets the ' . name . ' variable</p>'
+	put= ' *'
+	put= ' * @param	newValue ' . type . ' The new value'
+	put= ' *'
+	put= ' * @return	void'
+	put= ' */'
+	put= 'public void set' . cname . '(' . type . ' newValue){'
+	put= '	this.' . name . ' = newValue;'
+	put= '}'
+	normal 27k=27j27ji
 endfunction
 
 " ================================================================================

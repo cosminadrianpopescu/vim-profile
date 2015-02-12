@@ -52,18 +52,49 @@ snippet var_com
 	${5}
 snippet func_com
 	/**
-	 * Created by ${1:author}
+	 * Created by popesad
 	 *
-	 * <p>${2:function_description}</p>
+	 * <p>${1:function_description}</p>
 	 *
-	 * @param	${3:param_name} ${4:param_type} ${5:param_description}
+	 * @param	${2:param_name} ${3:param_type} ${4:param_description}
 	 *
-	 * @return	${6:return_type} ${7:return_description}
+	 * @return	${5:return_type} ${6:return_description}
 	 */
-	${8:access} $6 ${9:function_name}($4 $3){
-		${10}
+	${7:access} $5 ${8:function_name}($3 $2){
+		${9}
 	}
-	${11}
+	${10}
+
+snippet class_com
+	/**
+	 * Created by popesad
+	 *
+	 * <p>${1:class_description}</p>
+	 *
+	 */
+	class ${2:class_name} {
+		${3}
+	}
+
+snippet get_set
+	/**
+	 * ${1:var_description}
+	 */
+	private ${3:var_type} ${4:var_name};
+
+	/**
+	 * Created by popesad
+	 *
+	 * <p>Gets the $4 variable</p>
+	 *
+	 * @param	newValue $3 The new value
+	 *
+	 * @return	void
+	 */
+	public $3 set$4($3 newValue){
+		this.$4 = newValue;
+	}
+	
 snippet elif
 	else if (${1}) ${2}
 snippet wh
