@@ -50,6 +50,13 @@ snippet var_com
 	 */
 	${2:access} ${3:var_type} ${4:var_name};
 	${5}
+snippet inh_doc
+	/**
+	 * Created by popesad
+	 *
+	 * {@inheritDoc}
+	 */
+
 snippet func_com
 	/**
 	 * Created by popesad
@@ -76,25 +83,6 @@ snippet class_com
 		${3}
 	}
 
-snippet get_set
-	/**
-	 * ${1:var_description}
-	 */
-	private ${3:var_type} ${4:var_name};
-
-	/**
-	 * Created by popesad
-	 *
-	 * <p>Gets the $4 variable</p>
-	 *
-	 * @param	newValue $3 The new value
-	 *
-	 * @return	void
-	 */
-	public $3 set$4($3 newValue){
-		this.$4 = newValue;
-	}
-	
 snippet elif
 	else if (${1}) ${2}
 snippet wh
