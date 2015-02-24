@@ -121,6 +121,8 @@ autocmd FileType css set omnifunc=csscomplete#CompleteCSS
 autocmd FileType js set omnifunc=javascriptcomplete#CompleteJS
 autocmd FileType cs setlocal omnifunc=OmniSharp#Complete
 autocmd FileType jsp set filetype=xml
+autocmd FileType mason set filetype=xml
+autocmd BufEnter *.jspf set filetype=xml
 autocmd InsertEnter * setlocal foldmethod=manual
 autocmd BufWritePost * setl fdm=syntax
 
