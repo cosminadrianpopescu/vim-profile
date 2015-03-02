@@ -82,9 +82,10 @@ let g:ctrlp_funky_matchtype = 'path'
 let g:ctrlp_funky_syntax_highlight = 1
 let g:ctrlp_extensions = ['funky']
 let g:ctrlp_regexp = 1
+let g:sw_delete_tmp = 0
 ""let g:sw_asynchronious = 1
 
-let g:sw_exe = 'java -jar /home/lixa/programs/sources/sql-workbench/sqlworkbench.jar'
+let g:sw_exe = 'java -jar /home/lixa/programs/sources/sql-workbench-116/sqlworkbench.jar'
 let g:sw_config_dir = '/home/lixa/.sqlworkbench/'
 let g:sw_asynchronious = 1
 
