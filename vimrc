@@ -78,6 +78,10 @@ let g:togglecursor_leave = 'blinking_line'
 let g:sync_default_args = '--recursive'
 let g:wintabs_wipeout_buffer_onclose = 1
 let g:EasyMotion_skipfoldedline = 0
+let g:ctrlp_funky_matchtype = 'path'
+let g:ctrlp_funky_syntax_highlight = 1
+let g:ctrlp_extensions = ['funky']
+let g:ctrlp_regexp = 1
 ""let g:sw_asynchronious = 1
 
 let g:sw_exe = 'java -jar /home/lixa/programs/sources/sql-workbench/sqlworkbench.jar'
