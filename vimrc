@@ -67,6 +67,7 @@ let g:airline_powerline_fonts = 1
 let g:ctrlp_user_command='find %s'
 let g:ctrlp_lazy_update=1
 let mapleader=" "
+let g:ctrlp_map = '<leader>cp'
 let php_folding=1
 let javaScript_fold=1
 let xml_syntax_folding=1
@@ -80,7 +81,7 @@ let g:wintabs_wipeout_buffer_onclose = 1
 let g:EasyMotion_skipfoldedline = 0
 let g:ctrlp_funky_matchtype = 'path'
 let g:ctrlp_funky_syntax_highlight = 1
-let g:ctrlp_extensions = ['funky']
+let g:ctrlp_extensions = ['funky', 'line']
 let g:ctrlp_regexp = 1
 let g:sw_delete_tmp = 0
 ""let g:sw_asynchronious = 1
@@ -157,6 +158,7 @@ nmap <Leader>r :e<cr>
 nmap <Leader>h :WintabsPrevious<cr>
 nmap <Leader>k :call wintabs#previous()<cr>
 nmap <Leader>j :call wintabs#previous()<cr>
+nmap <C-p> :CtrlP <C-r>=getcwd()<cr><cr>
 nmap <Leader>l :WintabsNext<cr>
 imap jj <del>
 nmap <Leader>b ^
