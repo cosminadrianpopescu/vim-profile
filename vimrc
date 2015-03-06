@@ -128,6 +128,7 @@ autocmd FileType cs setlocal omnifunc=OmniSharp#Complete
 autocmd FileType jsp set filetype=xml
 autocmd FileType mason set filetype=xml
 autocmd BufEnter *.jspf set filetype=xml
+autocmd BufEnter *.vm set filetype=sql
 autocmd InsertEnter * setlocal foldmethod=manual
 autocmd BufWritePost * setl fdm=syntax
 
@@ -189,7 +190,8 @@ inoremap <tab> <C-R>=TriggerSnippet()<CR>
 nmap <leader>By :SessionSave<cr>:qa<cr>
 nmap <Leader>s :w<cr>
 nmap <Leader>q :WintabsClose<cr>:silent! edit<cr>
-nmap <Leader>fs :VimgrepSearch /\v\c/j<left><left>
+nmap <Leader>fs :noautocmd VimgrepSearch 
+nmap <Leader>fh :noautocmd VimgrepSearchFromHere 
 nmap <Leader>Q :q!<cr>:tabp<cr>
 ""nmap <C-]> <C-w><C-]><C-w>T
 nmap <C-\>> <C-w>}
