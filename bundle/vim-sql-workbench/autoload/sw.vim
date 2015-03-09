@@ -96,7 +96,7 @@ function! sw#async_end()
 endfunction
 
 function! sw#set_on_async_result(value)
-    if exists('b:on_async_result') && exists('b:async_on_progress')
+    if exists('b:on_async_result') && exists('b:async_on_progress') && !sw#dbexplorer#is_db_explorer_tab()
         throw 'There is a command in progress for this buffer. Please wait for it to finish.'
     endif
 
