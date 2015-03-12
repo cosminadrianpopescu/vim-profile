@@ -116,6 +116,8 @@ endif
 autocmd VimLeave * silent !echo -ne "\033]112\007"
 autocmd BufRead,BufNewFile *.md setlocal filetype=markdown
 autocmd BufRead,BufNewFile *.twig setlocal filetype=htmldjango
+autocmd BufEnter *.java autocmd! eclim_java
+autocmd BufEnter *.xml autocmd! eclim_xml
 autocmd BufRead,BufNewFile *.js autocmd! eclim_javascript
 autocmd BufRead,BufNewFile *.jsp autocmd! eclim_html_validate
 autocmd BufRead,BufNewFile *.module,*.php,*.inc autocmd! eclim_php
@@ -195,7 +197,8 @@ nmap <Leader>s :w<cr>
 nmap <Leader>q :WintabsClose<cr>:silent! edit<cr>
 nmap <Leader>fs :noautocmd VimgrepSearch 
 nmap <Leader>fh :noautocmd VimgrepSearchFromHere 
-nmap <Leader>ff :VimgrepSearchFromFolder  
+nmap <Leader>ff :VimgrepSearchFromFolder 
+nmap <Leader>c :call eclim#lang#UpdateSrcFile('<C-R>=&filetype<cr>')<cr>
 nmap <Leader>Q :q!<cr>:tabp<cr>
 ""nmap <C-]> <C-w><C-]><C-w>T
 nmap <C-\>> <C-w>}
