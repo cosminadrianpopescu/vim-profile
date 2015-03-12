@@ -63,6 +63,10 @@ function! sw#is_async()
 		endif
 	endif
 
+    if b:profile =~ '\v\c^!#'
+        throw "Sorry, you cannot execute any command. You are trying to execute something against a SQL Workbench server, but the VIM SQL Workbench plugin is not set to run asynchronous. In order to be able to connect to use SQL Workbench in server mode, please set the g:sw_asynchronious variable and set run vim in server mode"
+    endif
+
 	return 0
 endfunction
 
@@ -142,28 +146,37 @@ function! sw#check_async_result()
     endif
 endfunction
 
+function! sw#interrupt(...)
+    if mode() == 'i' || mode() == 'R'
+        let m = mode()
+        if m == 'i'
+            let m = 'a'
+        endif
+        if a:0
+            execute "call " . a:1
+        endif
+        execute "normal " . m
+    elseif mode() == 'V' || mode() == 'v' || mode() == 's'
+        let m = mode()
+        normal 
+        if a:0
+            execute "call " . a:1
+        endif
+        normal gv
+        if m == 's'
+            normal 
+        endif
+    else
+        if a:0
+            execute "call " . a:1
+        endif
+    endif
+endfunction
+
 function! sw#got_async_result(unique_id)
-    echomsg "GOT ASYNC RESULT" . a:unique_id
     call add(g:sw_async_ended, a:unique_id)
     if s:get_buff_unique_id() == a:unique_id
-        if mode() == 'i' || mode() == 'R'
-            let m = mode()
-            if m == 'i'
-                let m = 'a'
-            endif
-            call sw#async_end()
-            execute "normal " . m
-        elseif mode() == 'V' || mode() == 'v' || mode() == 's'
-            let m = mode()
-            normal 
-            call sw#async_end()
-            normal gv
-            if m == 's'
-                normal 
-            endif
-        else
-            call sw#async_end()
-        endif
+        call sw#interrupt('sw#async_end()')
     endif
     redraw!
     return ''
@@ -269,6 +282,14 @@ function! sw#get_sql_result(touch_result)
 	return result
 endfunction
 
+function! sw#get_sw_profile()
+    if exists('b:profile')
+        return substitute(b:profile, '\v\c^!#', '', 'g')
+    endif
+
+    return ''
+endfunction
+
 " Executes an sql command{{{1
 function! sw#execute_sql(profile, command, ...)
     if sw#is_async()
@@ -278,6 +299,7 @@ function! sw#execute_sql(profile, command, ...)
             endif
         endif
     endif
+
     execute "silent !echo '' >" . g:sw_tmp . '/' . s:output_file()
     let delimiter = ''
     if (exists('b:delimiter'))
@@ -321,18 +343,23 @@ function! sw#execute_sql(profile, command, ...)
         endif
     endif
     let g:sw_last_command = c
-    let lines = split(a:command, "\n")
-    call writefile(lines, g:sw_tmp . '/' . s:input_file())
-	" If do_shell returns 0, it means that the command was not executed
-	" asynchroniously
-	if (!sw#do_shell(c))
-		redraw!
-		let touch_result = 1
-		if a:0
-			let touch_result = a:1
-		endif
-		return sw#get_sql_result(touch_result)
-	endif
+    if !(b:profile =~ '\v\c^!#')
+        let lines = split(a:command, "\n")
+        call writefile(lines, g:sw_tmp . '/' . s:input_file())
+        " If do_shell returns 0, it means that the command was not executed
+        " asynchroniously
+        if (!sw#do_shell(c))
+            redraw!
+            let touch_result = 1
+            if a:0
+                let touch_result = a:1
+            endif
+            return sw#get_sql_result(touch_result)
+        endif
+    else
+        call sw#server#execute_sql(a:command)
+        let b:async_on_progress = 1
+    endif
 
 	redraw!
 	return []

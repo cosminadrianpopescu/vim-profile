@@ -139,6 +139,9 @@ endfunction
 
 function! sw#sqlwindow#set_delimiter(new_del)
     call s:check_sql_buffer()
+    if b:profile =~ '\v\c^!#'
+        throw 'You cannot change the delimier in server mode. This happens because SQL Workbench does now know another delimiter during console mode. You can only change the delimiter in batch mode (see the documentation). So, if you want to change the delimiter, please open the buffer in batch mode. '
+    endif
     call sw#session#set_buffer_variable('delimiter', a:new_del)
 endfunction
 
@@ -406,7 +409,7 @@ endfunction
 function! s:process_result(result)
     let result = a:result
     let uid = b:unique_id
-    let name = "__SQLResult__-" . b:profile . '__' . b:unique_id
+    let name = sw#sqlwindow#get_resultset_name()
     let profile = b:profile
 
     if (bufexists(name))
@@ -551,7 +554,7 @@ endfunction
 
 function! sw#sqlwindow#get_resultset_name()
     if exists('b:profile') && exists('b:unique_id')
-        return '__SQLResult__-' . b:profile . '__' . b:unique_id
+        return '__SQLResult__-' . sw#get_sw_profile() . '__' . b:unique_id
     endif
     return ''
 endfunction
@@ -581,7 +584,7 @@ endfunction
 
 function! sw#sqlwindow#check_hidden_results()
     if exists('g:sw_session')
-        let name = '__SQLResult__-' . b:profile . '__' . b:unique_id
+        let name = sw#sqlwindow#get_resultset_name()
         if bufwinnr(name) != -1
             return
         endif
