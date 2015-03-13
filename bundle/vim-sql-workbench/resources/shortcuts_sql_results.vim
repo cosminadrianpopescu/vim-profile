@@ -5,6 +5,6 @@
 nmap <buffer> <C-A> :SWSqlExecuteAll<cr>
 nmap <buffer> <C-i> :SWSqlObjectInfo<cr>
 nmap <buffer> <Leader>os :SWSqlObjectSource<cr>
-nmap <buffer> <M-m> :SWSqlToggleMessages<cr>
+nmap <buffer> <C-m> :SWSqlToggleMessages<cr>
 nmap <buffer> <C-d> :SWSqlToggleFormDisplay<cr>
 

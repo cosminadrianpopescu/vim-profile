@@ -1,0 +1,237 @@
+#!/usr/bin/env python
+#
+
+from __future__ import with_statement
+from optparse   import OptionParser
+
+import commands
+import datetime
+import os
+import popen2
+import re
+import string
+import sys
+import thread
+import time
+
+class SQLWorkbench(object):
+    id     = None
+    servername = "vim"
+    profile = None
+    uid = None
+    cmd = None
+    buffer_id = None
+    debug = 0
+    instance_id = None
+    vim = 'vim'
+    tmp = "/tmp"
+    clock = datetime.datetime.now()
+    who = None
+    initialization = True
+    buff = ''
+    quit       = False
+    lock       = thread.allocate_lock()
+    lastFile   = ''
+    prompt_pattern = '^[a-zA-Z_0-9]+(\\@[a-zA-Z_0-9]+)?\\> [ \s\t]*$'
+    buffer_id_pattern = '[\\.a-zA-Z_0-9]+\\@[a-zA-Z_0-9]+?\\>[ \s\t]*\/\*([0-9]+)#([0-9]+)\*\/'
+
+    def getPipeName(self):
+        return "%s/sw-pipe-%s" % (self.tmp, self.id)
+
+    def createCmdPipe(self):
+        os.mkfifo(self.getPipeName(), 0600)
+    #end def createCmdPipe
+
+    def removeCmdPipe(self):
+        os.system ("rm -f %s" % self.getPipeName())
+    #end def removeCmdPipe
+
+    def monitor(self, pipe):
+        while True:
+            cmdPipe = os.popen('cat %s' % self.getPipeName())
+            for line in cmdPipe.readline():
+                self.clock = datetime.datetime.now()
+                sys.stdout.write(line)
+                pipe.tochild.write(line)
+            #end for
+            cmdPipe.close()
+            with self.lock:
+                if self.quit:
+                    break
+            #end with
+        #end while
+    #end def monitor
+
+    def gotPrompt(self, line):
+        return re.search(self.prompt_pattern, line) != None
+    #end def gotPrompt
+
+    def gotBufferId(self, line):
+        return re.search(self.buffer_id_pattern + '$', line) != None
+    #end def gotBufferId
+
+    def gotCustomCommand(self, line):
+        p = re.search('^/\\*\\!#(ping)\\*/[ \\s\\t\\n]*$', line)
+        if p != None:
+            return p.group(1)
+        #end if
+        return None
+    #end def gotCustomCommand
+
+    def processResult(self):
+        self.buff += "\nSQL execution time: %.4g seconds" % (datetime.datetime.now() - self.clock).total_seconds()
+        if self.instance_id != None and self.buffer_id != None:
+            f = open('/tmp/sw-result-' + self.instance_id + '-' + self.buffer_id, 'w')
+            f.write(self.buff)
+            f.close()
+        #end if
+        if self.buffer_id != None:
+            self.toVim('sw#got_async_result(\\"%s\\")' % self.buffer_id)
+        #end if
+        self.buff = ''
+        self.buffer_id = None
+        self.instance_id = None
+        self.line = ''
+    #end def processResult
+
+    def parseLine(self, line):
+        if self.gotPrompt(line):
+            if self.initialization:
+                self.initialization = False
+                self.buff = ''
+                self.toVim('sw#server#new(\\"' + self.id + '\\")')
+            else:
+                self.processResult()
+            #end if
+        #end if
+
+        if self.gotBufferId(line):
+            p = re.search(self.buffer_id_pattern, line)
+            self.instance_id = p.group(1)
+            self.buffer_id = p.group(2)
+            self.line = ''
+        #end if
+
+        custom_command = self.gotCustomCommand(line)
+        if custom_command != None:
+            if custom_command == 'ping':
+                self.toVim('sw#server#new(\\"' + self.id + '\\")')
+                self.line = ''
+            #end if
+        #end if
+    #end def parseLine
+
+    def receiver(self, pipe):
+        line = ''
+        while True:
+            char = pipe.fromchild.read(1)
+
+            if self.debug:
+                sys.stdout.write(char)
+                sys.stdout.flush()
+            #end if
+            line += char
+            self.parseLine(line)
+            if char == "\n":
+                self.buff += re.sub(self.buffer_id_pattern, '', re.sub('^\\.\\.\\>', '', line))
+                line = ''
+            #end if
+
+            with self.lock:
+                if self.quit: break
+            #end with
+        #end while
+    #end def receiver
+
+    def sender(self, pipe):
+        while True:
+            char = sys.stdin.read(1)
+            pipe.tochild.write(char)
+            with self.lock:
+                if self.quit:
+                    pipe.tochild.write('exit;\n')
+                    break
+                #end if
+            #end with
+        #end while
+    #end def sender
+
+    def toVim(self, cmd):
+        _cmd = '%s --servername %s -u NONE -U none --remote-expr "%s"' % (self.vim, self.servername, cmd)
+        if self.debug:
+            print "SENDING TO VIM: " + _cmd
+        #end if
+        os.system(_cmd)
+    #end def toVim
+
+    def main(self):
+        try:
+            if self.id == None and self.profile == None: 
+                print "You have to set the vim id or the profile. Please see the help. "
+                sys.exit(1)
+            #end if
+            if self.id == None:
+                self.id = self.profile
+            #end if
+            if self.cmd == None:
+                print "You have to set the sql workbench command. Please see the help. "
+                sys.exit(1)
+            #end if
+            self.servername = self.servername.upper()
+            self.createCmdPipe()
+
+            servers = commands.getoutput("vim -u NONE -U NONE --serverlist")
+            servers = servers.split("\n")
+
+            if not self.servername in servers:
+                print "The vim server with this instance does not exists"
+                sys.exit(1)
+            #end if
+
+            cmd = "%s -feedback=true" % (self.cmd)
+            if (self.profile != None):
+                cmd += " -profile=%s" % self.profile
+            #end if
+            print "OPENING: " + cmd
+            pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
+
+            thread.start_new_thread(self.receiver, (pipe,))
+            thread.start_new_thread(self.sender,   (pipe,))
+            thread.start_new_thread(self.monitor,  (pipe,))
+
+            try:
+                while True:
+                    if pipe.poll() != -1:
+                        self.quit = True
+                        break
+                    time.sleep(0.1)
+                #end while
+            except KeyboardInterrupt, ex:
+                with self.lock:
+                    self.quit = True
+            #end try...except
+            time.sleep(0.3)
+            self.toVim('sw#server#remove(\\"%s\\")' % self.id)
+        finally:
+            self.removeCmdPipe()
+        #end try
+    #end def main
+#end class SQLWorkbench
+
+if __name__ == "__main__":
+    obj = SQLWorkbench()
+    parser = OptionParser()
+    parser.add_option("-s", "--server", help="GVIM Server Name", dest="servername", default="vim")
+    parser.add_option("-i", "--id",   help="The id of the instance",    dest="id",     default="Unknown")
+    parser.add_option("-t", "--tmp",   help="The location of tmp folder",    dest="tmp",     default="/tmp")
+    parser.add_option("-p", "--profile",   help="The sql workbench profile",    dest="profile",     default=None)
+    parser.add_option("-c", "--command",   help="The command to launch the sql workbench console",    dest="cmd",     default=None)
+    parser.add_option("-v", "--vim",   help="The path to the vim executable", dest="vim",     default='vim')
+    parser.add_option("-d", "--debug",   help="The debuging mode", dest="debug", default='0')
+    (options,args) = parser.parse_args(sys.argv[1:], obj)
+    obj.args = args
+    obj.main()
+#end if
+
+# vim:set et ts=4 sw=4:
+#EOF

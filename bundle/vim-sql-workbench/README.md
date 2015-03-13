@@ -33,8 +33,8 @@ CONTENTS:
 9. Variables
 10. Commands
 11. Settings
-12. Screen shots
-13. Missing features
+12. Transactions
+13. Screen shots
 
 Requirements
 ========================================
@@ -669,7 +669,7 @@ the indicated profile is closed.
 
 After a session restore, this command will restore an opened database panel
 
-## SWSqlBufferAddProfile
+## SWSqlBufferSetProfile
 
 *Parameters*: 
 
@@ -1078,6 +1078,86 @@ and
   execute any command. Useful for debugging. You can set it to 0 and check all
   the generated files
 
+Transactions
+========================================
+
+The `sql vim workbench` plugin uses `SQL Workbench/J` batch mode to send
+commands to the DBMS. See
+[here](http://www.sql-workbench.net/manual/using-scripting.html). This means
+that every time you send a statement, a connection to the database is opened,
+the statement is sent and then the connection is closed. So, it's obviously
+that a transaction will be ended after the statement is sent. 
+
+Starting with version `2.0` of the plugin, is it possible to also use the
+[console mode of `SQL
+Workbench/J`](http://www.sql-workbench.net/manual/console-mode.html). 
+
+## Requirements
+
+* `Posix` compatible operating system (this means no `Windows`)
+* `Vim` compiled with `python` supported
+* `Python` installed on the machine
+* `SQL Workbench/J` and the `vim` instance with which it communicates to be
+  installed on the same machine
+* Optional: [`vim dispatch`](https://github.com/tpope/vim-dispatch) plugin
+  installed.
+* `VIM` started in server mode
+
+In order to use the transactions, you need to use the server mode of the
+plugin. For this you need a permanent `SQL workbench/j` instance in memory.
+This is done using a named pipe (from python `os.myfifo`). Unfortunately this
+is `posix` complaint only. This is why this feature will not work at the
+moment in `Windows`. It works, however, in `cygwin`. 
+
+There are two ways to start a permanent connection: 
+
+## Opening a permanent connection automatically
+
+For this you need to have the `vim dispatch` plugin installed. If you want to
+start a new permanent connection from `vim`, you can call the command
+`SWServerStart` with the profile that you want to connect to. 
+
+Please note that having a permanent connection, you can also do `WBConnect` to
+change the connection. See
+[here](http://www.sql-workbench.net/manual/wb-commands.html#command-connect)
+for more informations. 
+
+For example: `SWServerStart myProfile`. 
+
+## Opening a permanent connection manually
+
+If you don't want or you can't install the `vim dispatch` plugin, you can
+always open a permanent connection manually. From your terminal, you need to
+run the `resources/sqlwbconsole` script. For a list of parameters you can do
+`resources/sqlwbconsole --help`. The following parameters are mandatory: 
+
+* The profile (`-p`)
+* The temporary folder (`-t`). Please note that this should be identical with
+  `g:sw_tmp`
+* The vim server name (`-s`). You can get this by doing `:echo v:servername`
+  in your `vim`
+* The path to your `sqlwbconsole` executable (`-c`). 
+
+*Example*: 
+
+```
+`resources/sqlwbconsole -p myProfile -t /tmp -s VIM -c
+/usr/bin/sqlwbconsole.sh`
+```
+
+If you don't want to use this way of sending commands, you can at any time run
+the `SWSqlBufferSetProfile` command to switch to the batch mode. 
+
+*NOTE*:
+
+This is not tested at all at the moment, so consider this feature `pre alpha`.
+I will begin testing it in the following days, and as soon as I will discover
+bugs, I will fix them and eliminate this note when it will become more stable. 
+
+Also, please note, if you start the server manually, that you need to first
+start `vim` and then the server. 
+
+![Database explorer](resources/screenshots/s01.jpg)
 Screen shots
 ========================================
 
@@ -1087,19 +1167,3 @@ Screen shots
 ![SQL Buffer result set](resources/screenshots/s04.jpg)
 ![SQL Buffer row displayed as form](resources/screenshots/s05.jpg)
 ![SQL Buffer resultset messages](resources/screenshots/s06.jpg)
-
-Missing Features
-========================================
-
-The biggest missing feature are the transactions. Since every command is
-executed using the console mode of `SQL Workbench` and then the result is
-taken from a temporary file and displayed, this means that the connection to
-the database is opened and closed every time when a command is sent to the
-DBMS. 
-
-In order to fix this, would be nice if the `SQL Workbench` software would have
-a start as daemon feature. Since this is not yet the case, at the moment the
-transactions cannot be implemented. 
-
-However, I will look into possibilities. If anybody has any idea on how to
-implement transactions, I am willing to implement it. 
