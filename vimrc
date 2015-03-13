@@ -83,6 +83,7 @@ let g:ctrlp_funky_matchtype = 'path'
 let g:ctrlp_funky_syntax_highlight = 1
 let g:ctrlp_extensions = ['funky', 'line']
 let g:ctrlp_regexp = 1
+let g:Mta_goto_enclosing_tag_map = '<leader>\'
 let g:sw_delete_tmp = 0
 ""let g:sw_asynchronious = 1
 
