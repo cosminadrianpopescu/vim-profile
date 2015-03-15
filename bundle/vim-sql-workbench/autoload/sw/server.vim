@@ -34,11 +34,13 @@ function! sw#server#run(profile)
     redraw!
 endfunction
 
-function! sw#server#connect_buffer(profile, file, command)
+function! sw#server#connect_buffer(profile, file, port, command)
     if !has_key(s:active_servers, a:profile)
         throw "There is no sql workbench server with the id " . a:profile
     endif
-    call sw#sqlwindow#open_buffer('!#' . a:profile, a:file, a:command)
+    call sw#sqlwindow#open_buffer(a:profile, a:file, a:command)
+    call sw#session#set_buffer_variable('port', a:port)
+    let b:port = a:port
 endfunction
 
 function! sw#server#ping(id)
@@ -62,9 +64,19 @@ function! sw#server#remove(id)
 endfunction
 
 function! s:pipe_execute(cmd, id)
-    execute "python fd = open('" . s:get_pipe_name(a:id) . "', 'w')"
-    exec 'python fd.write("%s\n" % "' . escape(a:cmd, '"') . '")'
-    python fd.close()
+    python << SCRIPT
+import vim
+buffer_id = vim.eval('b:unique_id')
+instance_id = vim.eval('g:sw_instance_id')
+cmd = vim.eval('a:cmd') + "\n"
+port = int(vim.eval('b:port'))
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(('127.0.0.1', port))
+s.sendall("!#buffer_id = " + buffer_id + "\n")
+s.sendall("!#instance_id = " + instance_id + "\n")
+s.sendall(cmd)
+s.close()
+SCRIPT
 endfunction
 
 function! sw#server#stop(id)
@@ -72,26 +84,9 @@ function! sw#server#stop(id)
 endfunction
 
 function! sw#server#execute_sql(sql)
-    let id = substitute(b:profile, '\v\c^!#', '', 'g')
-    let lines = split(a:sql, "\n")
-
-    let first = 0
-    let commands = []
-    for line in lines
-        if !(line =~ '\v\c^[ \s\t]*$')
-            if !first
-                let line = '/*' . g:sw_instance_id . '#' . b:unique_id . '*/' . line
-                let first = 1
-            endif
-
-            call add(commands, line)
-        endif
-    endfor
-
-    if !(commands[len(commands) - 1] =~ ';[ \s\t]*$')
-        let commands[len(commands) - 1] .= ';'
+    let sql = a:sql
+    if !(substitute(sql, "^\\v\\c\\n", ' ', 'g') =~ ';[ \s\t\r]*$')
+        let sql = sql . ";"
     endif
-    for command in commands
-        call s:pipe_execute(command, id)
-    endfor
+    call s:pipe_execute(sql, b:profile)
 endfunction

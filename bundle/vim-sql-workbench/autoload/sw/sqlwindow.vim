@@ -73,6 +73,7 @@ function! s:do_open_buffer()
     call sw#session#set_buffer_variable('abort_on_errors', g:sw_abort_on_errors)
     call sw#session#set_buffer_variable('feedback', g:sw_feedback)
     call sw#session#set_buffer_variable('unique_id', sw#generate_unique_id())
+    call sw#session#unset_buffer_variable('port')
     call sw#session#autocommand('BufEnter', 'sw#sqlwindow#set_statement_shortcuts()')
     call sw#session#autocommand('BufEnter', 'sw#check_async_result()')
     call sw#sqlwindow#set_statement_shortcuts()
@@ -139,7 +140,7 @@ endfunction
 
 function! sw#sqlwindow#set_delimiter(new_del)
     call s:check_sql_buffer()
-    if b:profile =~ '\v\c^!#'
+    if exists('b:port')
         throw 'You cannot change the delimier in server mode. This happens because SQL Workbench does now know another delimiter during console mode. You can only change the delimiter in batch mode (see the documentation). So, if you want to change the delimiter, please open the buffer in batch mode. '
     endif
     call sw#session#set_buffer_variable('delimiter', a:new_del)
