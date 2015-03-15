@@ -35,7 +35,8 @@ class SQLWorkbench(object):
     quit       = False
     lock       = thread.allocate_lock()
     lastFile   = ''
-    prompt_pattern = '^[a-zA-Z_0-9]+(\\@[a-zA-Z_0-9]+)?\\> [ \s\t]*$'
+    prompt_pattern_begin = '^[a-zA-Z_0-9]+(\\@[a-zA-Z_0-9]+)?\\>[ \s\t]*'
+    prompt_pattern = prompt_pattern_begin + '$'
     buffer_id_pattern = '[\\.a-zA-Z_0-9]+\\@[a-zA-Z_0-9]+?\\>[ \s\t]*\/\*([0-9]+)#([0-9]+)\*\/'
 
     def getPipeName(self):
@@ -48,6 +49,11 @@ class SQLWorkbench(object):
     def removeCmdPipe(self):
         os.system ("rm -f %s" % self.getPipeName())
     #end def removeCmdPipe
+
+    def sendToWB(self, data, pipe):
+        self.toRead = len(data)
+        pipe.tochild.write(data)
+    #end def sendToWB
 
     def receiveData(self, conn, pipe):
         self.line = ''
@@ -140,15 +146,26 @@ class SQLWorkbench(object):
     #end def toSendToVim
 
     def addExeTime(self):
-        self.buff += "\nSQL execution time: %.4g seconds" % (datetime.datetime.now() - self.clock).total_seconds() + "\n"
-        self.clock = datetime.datetime.now()
+        lines = self.buff.split("\n")
+        if re.search('^SQL execution time', lines[len(lines) - 2]) == None:
+            self.buff += "\nSQL execution time: %.2g seconds" % (datetime.datetime.now() - self.clock).total_seconds() + "\n"
+            self.clock = datetime.datetime.now()
+        #end if
     #end def addExeTime
 
     def prepareResult(self):
         result = ''
         lines = self.buff.split("\n")
+        skip_2 = False
+        if re.match('^[ \\s\\t]*$', lines[0]) != None and re.match('^SQL execution time', lines[1]) != None:
+            skip_2 = True
+        #end if
         do_add = True
-        for line in lines:
+        for i in range(len(lines) - 2):
+            if skip_2 and i < 2:
+                continue
+            #end if
+            line = lines[i]
             if re.search('-- auto[\\n\\t\\s ]*$', line) != None:
                 do_add = False
             #end if
@@ -164,14 +181,11 @@ class SQLWorkbench(object):
     #end def prepareResult
 
     def processResult(self):
-        self.addExeTime()
         if self.instance_id != None and self.buffer_id != None:
             self.prepareResult()
             f = open('/tmp/sw-result-' + self.instance_id + '-' + self.buffer_id, 'w')
             f.write(self.buff)
             f.close()
-        #end if
-        if self.buffer_id != None:
             self.toVim('sw#got_async_result(\\"%s\\")' % self.buffer_id)
         #end if
         self.buff = ''
@@ -186,8 +200,9 @@ class SQLWorkbench(object):
                 self.initialization = False
                 self.buff = ''
                 self.line = ''
-                self.toVim('sw#server#new(\\"' + self.id + '\\")')
+                self.toVim('sw#server#new(\\"' + self.id + '\\", ' + str(self.port) + ')')
             else:
+                pattern = self.prompt_pattern_begin + '.*[^ \\s\\t;]+'
                 self.addExeTime()
             #end if
         #end if
@@ -199,18 +214,25 @@ class SQLWorkbench(object):
     def receiver(self, pipe):
         line = ''
         while True:
-            char = pipe.fromchild.read(1)
+            if self.initialization:
+                char = pipe.fromchild.read(1)
+                line += char
+                if char == "\n":
+                    line = ''
+                #end if
+            else:
+                line = pipe.fromchild.readline()
+                if re.search(self.prompt_pattern_begin, line) != None:
+                    self.addExeTime()
+                #end if
+                self.buff += re.sub(self.prompt_pattern, '', re.sub('^\\.\\.\\> ', '', line))
+                if self.debug:
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
+                #end if
+            #end if
 
-            if self.debug:
-                sys.stdout.write(char)
-                sys.stdout.flush()
-            #end if
-            line += char
             self.parseLine(line)
-            if char == "\n":
-                self.buff += re.sub(self.prompt_pattern, '', re.sub('^\\.\\.\\>', '', line))
-                line = ''
-            #end if
 
             with self.lock:
                 if self.quit: break
@@ -275,7 +297,7 @@ class SQLWorkbench(object):
             pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
 
             thread.start_new_thread(self.receiver, (pipe,))
-            thread.start_new_thread(self.sender,   (pipe,))
+            #thread.start_new_thread(self.sender,   (pipe,))
             thread.start_new_thread(self.monitor,  (pipe,))
 
             try:

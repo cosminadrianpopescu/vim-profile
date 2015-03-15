@@ -24,31 +24,30 @@ function! s:get_pipe_name(id)
     return g:sw_tmp . '/sw-pipe-' . a:id
 endfunction
 
-function! sw#server#run(profile)
+function! sw#server#run(profile, port)
     if !exists('g:loaded_dispatch')
         throw 'You cannot start a server without vim dispatch plugin. Please install it first. If you don''t want or you don''t have the possibility to install it, you can always start the server manually. '
     endif
-    let cmd = 'Start! ' . s:current_file . '/../../resources/sqlwbconsole' . ' -t ' . g:sw_tmp . ' -p ' . a:profile . ' -s ' . v:servername . ' -c ' . g:sw_exe . ' -v ' . g:sw_vim_exe
+    let cmd = 'Start! ' . s:current_file . '/../../resources/sqlwbconsole' . ' -t ' . g:sw_tmp . ' -p ' . a:profile . ' -s ' . v:servername . ' -c ' . g:sw_exe . ' -v ' . g:sw_vim_exe . ' -o ' . a:port
 
     execute cmd
     redraw!
 endfunction
 
-function! sw#server#connect_buffer(profile, file, port, command)
+function! sw#server#connect_buffer(profile, file, command)
     if !has_key(s:active_servers, a:profile)
         throw "There is no sql workbench server with the id " . a:profile
     endif
     call sw#sqlwindow#open_buffer(a:profile, a:file, a:command)
-    call sw#session#set_buffer_variable('port', a:port)
-    let b:port = a:port
+    call sw#session#set_buffer_variable('port', s:active_servers[a:profile])
 endfunction
 
 function! sw#server#ping(id)
     call s:pipe_execute('/*!#ping*/', a:id)
 endfunction
 
-function! sw#server#new(id)
-    let s:active_servers[a:id] = '1'
+function! sw#server#new(id, port)
+    let s:active_servers[a:id] = a:port
     echomsg "Added new server: " . a:id
     call sw#interrupt()
     redraw!
@@ -63,13 +62,29 @@ function! sw#server#remove(id)
     return ''
 endfunction
 
-function! s:pipe_execute(cmd, id)
+function! s:pipe_execute(cmd, ...)
+    let port = 0
+    if a:0
+        let port = a:1
+    else
+        if exists('b:port')
+            let port = b:port
+        endif
+    endif
+    if port == 0
+        throw "There is no port set for this buffer. "
+    endif
+    let uid = -1
+    if exists('b:unique_id')
+        let uid = b:unique_id
+    endif
+
     python << SCRIPT
 import vim
-buffer_id = vim.eval('b:unique_id')
+buffer_id = vim.eval('uid')
 instance_id = vim.eval('g:sw_instance_id')
 cmd = vim.eval('a:cmd') + "\n"
-port = int(vim.eval('b:port'))
+port = int(vim.eval('port'))
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(('127.0.0.1', port))
 s.sendall("!#buffer_id = " + buffer_id + "\n")
@@ -79,14 +94,14 @@ s.close()
 SCRIPT
 endfunction
 
-function! sw#server#stop(id)
-    call s:pipe_execute("exit", a:id)
+function! sw#server#stop(port)
+    call s:pipe_execute("exit", a:port)
 endfunction
 
 function! sw#server#execute_sql(sql)
     let sql = a:sql
-    if !(substitute(sql, "^\\v\\c\\n", ' ', 'g') =~ ';[ \s\t\r]*$')
-        let sql = sql . ";"
+    if !(substitute(sql, "^\\v\\c\\n", ' ', 'g') =~ b:delimiter . '[ \s\t\r]*$')
+        let sql = sql . b:delimiter
     endif
-    call s:pipe_execute(sql, b:profile)
+    call s:pipe_execute(sql)
 endfunction
