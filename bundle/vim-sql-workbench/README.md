@@ -984,6 +984,38 @@ Enables the replacement of the parameters in the queries sent to the DBMS
 
 Lists the parameters values
 
+## SWServerStart
+
+*Parameters*:
+
+* the profile: the profile used for the `SQL Workbench/J` console
+* the port: the port on which the server will listen
+
+This command will spawn a new server which will launch a `SQL Workbench/J` in
+console mode. This can be used if you want to use transactions. 
+
+Please note that you need `vim dispatch` plugin in order to run this from
+`vim`. 
+
+## SWServerStop
+
+*Parameters*:
+
+* the port: the port of the server to close. 
+
+This command will stop a server. Also the `SQL Workbench/J` instance in
+console mode will be closed. 
+
+## SWSqlConnectToServer
+
+*Parameters*: 
+
+* profile name: the name of the profile for which to open the sql buffer.
+* file name: the name of the file to open. 
+
+This will open a new buffer which will be connected to an existing
+`sqlwbconsole` server. 
+
 Settings
 ========================================
 
@@ -1094,7 +1126,6 @@ Workbench/J`](http://www.sql-workbench.net/manual/console-mode.html).
 
 ## Requirements
 
-* `Posix` compatible operating system (this means no `Windows`)
 * `Vim` compiled with `python` supported
 * `Python` installed on the machine
 * `SQL Workbench/J` and the `vim` instance with which it communicates to be
@@ -1105,9 +1136,17 @@ Workbench/J`](http://www.sql-workbench.net/manual/console-mode.html).
 
 In order to use the transactions, you need to use the server mode of the
 plugin. For this you need a permanent `SQL workbench/j` instance in memory.
-This is done using a named pipe (from python `os.myfifo`). Unfortunately this
-is `posix` complaint only. This is why this feature will not work at the
-moment in `Windows`. It works, however, in `cygwin`. 
+This is done starting the `resources/sqlwbconsole` `python` script. This will
+start an instance of `SQL Workbench/J` in console mode and then will start a
+server listening on the indicated port. Every time when you connect to that
+port, you can send a command to the `SQL Workbench/J` instance. 
+
+Basically the plugin will connect to this port (using a `python` function,
+thus the need to have `vim` compiled with `python` support), will send the
+command and it will indicate to the server where it will wait for the result. 
+
+The `resources/sqlwbconsole` script will execute send the command to `SQL
+Workbench/J`, get its output and send it back to vim. 
 
 There are two ways to start a permanent connection: 
 
@@ -1115,14 +1154,15 @@ There are two ways to start a permanent connection:
 
 For this you need to have the `vim dispatch` plugin installed. If you want to
 start a new permanent connection from `vim`, you can call the command
-`SWServerStart` with the profile that you want to connect to. 
+`SWServerStart` with the profile that you want to connect to and with the port
+on which to listen. 
 
 Please note that having a permanent connection, you can also do `WBConnect` to
 change the connection. See
 [here](http://www.sql-workbench.net/manual/wb-commands.html#command-connect)
 for more informations. 
 
-For example: `SWServerStart myProfile`. 
+For example: `SWServerStart myProfile 5000`. 
 
 ## Opening a permanent connection manually
 
@@ -1137,16 +1177,28 @@ run the `resources/sqlwbconsole` script. For a list of parameters you can do
 * The vim server name (`-s`). You can get this by doing `:echo v:servername`
   in your `vim`
 * The path to your `sqlwbconsole` executable (`-c`). 
+* The port on which to listen (`-o`)
 
 *Example*: 
 
 ```
 `resources/sqlwbconsole -p myProfile -t /tmp -s VIM -c
-/usr/bin/sqlwbconsole.sh`
+/usr/bin/sqlwbconsole.sh -o 5000`
 ```
 
 If you don't want to use this way of sending commands, you can at any time run
 the `SWSqlBufferSetProfile` command to switch to the batch mode. 
+
+## Misc. 
+
+Please note that the server is not multi-threading. This means that only a
+command is executed at a time, even if you connect from 2 buffers to the same
+instance. This is because a server only handles one `SQL Workbench/J` instance
+at a time, and that can only execute one command at a time. 
+
+If you want to execute commands in parallel for the same profile, you need to
+create two profiles with the same preferences, then spawn servers for each of
+these profiles and connect each buffer to each of these servers. 
 
 *NOTE*:
 
@@ -1157,7 +1209,6 @@ bugs, I will fix them and eliminate this note when it will become more stable.
 Also, please note, if you start the server manually, that you need to first
 start `vim` and then the server. 
 
-![Database explorer](resources/screenshots/s01.jpg)
 Screen shots
 ========================================
 

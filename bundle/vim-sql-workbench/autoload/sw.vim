@@ -63,7 +63,7 @@ function! sw#is_async()
 		endif
 	endif
 
-    if b:profile =~ '\v\c^!#'
+    if exists('b:port')
         throw "Sorry, you cannot execute any command. You are trying to execute something against a SQL Workbench server, but the VIM SQL Workbench plugin is not set to run asynchronous. In order to be able to connect to use SQL Workbench in server mode, please set the g:sw_asynchronious variable and set run vim in server mode"
     endif
 
@@ -284,7 +284,7 @@ endfunction
 
 function! sw#get_sw_profile()
     if exists('b:profile')
-        return substitute(b:profile, '\v\c^!#', '', 'g')
+        return b:profile
     endif
 
     return ''
@@ -343,7 +343,7 @@ function! sw#execute_sql(profile, command, ...)
         endif
     endif
     let g:sw_last_command = c
-    if !(b:profile =~ '\v\c^!#')
+    if !exists('b:port')
         let lines = split(a:command, "\n")
         call writefile(lines, g:sw_tmp . '/' . s:input_file())
         " If do_shell returns 0, it means that the command was not executed

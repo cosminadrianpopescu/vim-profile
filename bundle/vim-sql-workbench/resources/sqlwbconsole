@@ -7,6 +7,7 @@ from optparse   import OptionParser
 import commands
 import datetime
 import os
+import socket
 import popen2
 import re
 import string
@@ -21,8 +22,10 @@ class SQLWorkbench(object):
     uid = None
     cmd = None
     buffer_id = None
+    port = None
     debug = 0
     instance_id = None
+    custom_command_pattern = '(ping|buffer_id[ \\s\\t]*=[ \\s\\t]*[0-9]+|instance_id[ \\s\\t]*=[ \\s\\t]*[0-9]+)'
     vim = 'vim'
     tmp = "/tmp"
     clock = datetime.datetime.now()
@@ -32,7 +35,8 @@ class SQLWorkbench(object):
     quit       = False
     lock       = thread.allocate_lock()
     lastFile   = ''
-    prompt_pattern = '^[a-zA-Z_0-9]+(\\@[a-zA-Z_0-9]+)?\\> [ \s\t]*$'
+    prompt_pattern_begin = '^[a-zA-Z_0-9]+(\\@[a-zA-Z_0-9]+)?\\>[ \s\t]*'
+    prompt_pattern = prompt_pattern_begin + '$'
     buffer_id_pattern = '[\\.a-zA-Z_0-9]+\\@[a-zA-Z_0-9]+?\\>[ \s\t]*\/\*([0-9]+)#([0-9]+)\*\/'
 
     def getPipeName(self):
@@ -46,20 +50,68 @@ class SQLWorkbench(object):
         os.system ("rm -f %s" % self.getPipeName())
     #end def removeCmdPipe
 
-    def monitor(self, pipe):
-        while True:
-            cmdPipe = os.popen('cat %s' % self.getPipeName())
-            for line in cmdPipe.readline():
-                self.clock = datetime.datetime.now()
-                sys.stdout.write(line)
-                pipe.tochild.write(line)
+    def sendToWB(self, data, pipe):
+        self.toRead = len(data)
+        pipe.tochild.write(data)
+    #end def sendToWB
+
+    def receiveData(self, conn, pipe):
+        self.line = ''
+        self.buff = ''
+        while 1:
+            data = conn.recv(4096)
+            if not data: 
+                break
+            #end if
+            lines = data.split("\n")
+            for line in lines:
+                if re.search('^!#', line) != None:
+                    command = self.gotCustomCommand(line)
+                    if command != None:
+                        self.parseCustomCommand(command)
+                    #end if
+                else:
+                    self.clock = datetime.datetime.now()
+                    if line != '':
+                        pipe.tochild.write(line + "\n")
+                    #end if
+                #end if
             #end for
-            cmdPipe.close()
+        #end while
+        pipe.tochild.write("\n/*SEND TO VIM*/;\n")
+    #end def receiveData
+
+    def monitor(self, pipe):
+        HOST = '127.0.0.1'   # Symbolic name meaning all available interfaces
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+         
+        try:
+            s.bind((HOST, self.port))
+        except socket.error , msg:
+            print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
+            sys.exit()
+             
+        s.listen(10)
+         
+        #now keep talking with the client
+        while 1:
+            #wait to accept a connection - blocking call
+            conn, addr = s.accept()
+            if self.debug:
+                print 'Connected with ' + addr[0] + ':' + str(addr[1])
+            #end if
+
+            self.receiveData(conn, pipe)
+            #thread.start_new_thread(self.receiveData, (conn, pipe))
+             
             with self.lock:
                 if self.quit:
                     break
+                #end if
             #end with
         #end while
+        s.close()
     #end def monitor
 
     def gotPrompt(self, line):
@@ -70,22 +122,70 @@ class SQLWorkbench(object):
         return re.search(self.buffer_id_pattern + '$', line) != None
     #end def gotBufferId
 
-    def gotCustomCommand(self, line):
-        p = re.search('^/\\*\\!#(ping)\\*/[ \\s\\t\\n]*$', line)
+    def gotCustomCommand(self, text):
+        p = re.search('^!#[ \\s\\t]*' + self.custom_command_pattern + '[ \\s\\t\\n]*$', text)
         if p != None:
             return p.group(1)
         #end if
         return None
     #end def gotCustomCommand
 
+    def parseCustomCommand(self, command):
+        p = re.search('^(instance_id|buffer_id)[ \\s\\t]*=[\\s \\t]*([0-9]+)[ \\s\\t]*$', command)
+        if p != None:
+            if p.group(1) == 'instance_id':
+                self.instance_id = p.group(2)
+            elif p.group(1) == 'buffer_id':
+                self.buffer_id = p.group(2)
+            #end if
+        #end if
+    #end def parseCustomCommand
+
+    def toSendToVim(self, line):
+        return re.search("/\\*SEND TO VIM\\*/;[ \\s\\t\\n]*$", line) != None
+    #end def toSendToVim
+
+    def addExeTime(self):
+        lines = self.buff.split("\n")
+        if re.search('^SQL execution time', lines[len(lines) - 2]) == None:
+            self.buff += "\nSQL execution time: %.2g seconds" % (datetime.datetime.now() - self.clock).total_seconds() + "\n"
+            self.clock = datetime.datetime.now()
+        #end if
+    #end def addExeTime
+
+    def prepareResult(self):
+        result = ''
+        lines = self.buff.split("\n")
+        skip_2 = False
+        if re.match('^[ \\s\\t]*$', lines[0]) != None and re.match('^SQL execution time', lines[1]) != None:
+            skip_2 = True
+        #end if
+        do_add = True
+        for i in range(len(lines) - 2):
+            if skip_2 and i < 2:
+                continue
+            #end if
+            line = lines[i]
+            if re.search('-- auto[\\n\\t\\s ]*$', line) != None:
+                do_add = False
+            #end if
+            if do_add:
+                result += line + "\n"
+            #end if
+            if re.search('-- end auto[\\n\\s\\t ]*$', line) != None:
+                do_add = True
+            #end if
+        #end for
+
+        self.buff = result
+    #end def prepareResult
+
     def processResult(self):
-        self.buff += "\nSQL execution time: %.4g seconds" % (datetime.datetime.now() - self.clock).total_seconds()
         if self.instance_id != None and self.buffer_id != None:
+            self.prepareResult()
             f = open('/tmp/sw-result-' + self.instance_id + '-' + self.buffer_id, 'w')
             f.write(self.buff)
             f.close()
-        #end if
-        if self.buffer_id != None:
             self.toVim('sw#got_async_result(\\"%s\\")' % self.buffer_id)
         #end if
         self.buff = ''
@@ -99,43 +199,40 @@ class SQLWorkbench(object):
             if self.initialization:
                 self.initialization = False
                 self.buff = ''
-                self.toVim('sw#server#new(\\"' + self.id + '\\")')
-            else:
-                self.processResult()
-            #end if
-        #end if
-
-        if self.gotBufferId(line):
-            p = re.search(self.buffer_id_pattern, line)
-            self.instance_id = p.group(1)
-            self.buffer_id = p.group(2)
-            self.line = ''
-        #end if
-
-        custom_command = self.gotCustomCommand(line)
-        if custom_command != None:
-            if custom_command == 'ping':
-                self.toVim('sw#server#new(\\"' + self.id + '\\")')
                 self.line = ''
+                self.toVim('sw#server#new(\\"' + self.id + '\\", ' + str(self.port) + ')')
+            else:
+                pattern = self.prompt_pattern_begin + '.*[^ \\s\\t;]+'
+                self.addExeTime()
             #end if
+        #end if
+        if self.toSendToVim(line):
+            self.processResult()
         #end if
     #end def parseLine
 
     def receiver(self, pipe):
         line = ''
         while True:
-            char = pipe.fromchild.read(1)
+            if self.initialization:
+                char = pipe.fromchild.read(1)
+                line += char
+                if char == "\n":
+                    line = ''
+                #end if
+            else:
+                line = pipe.fromchild.readline()
+                if re.search(self.prompt_pattern_begin, line) != None:
+                    self.addExeTime()
+                #end if
+                self.buff += re.sub(self.prompt_pattern, '', re.sub('^\\.\\.\\> ', '', line))
+                if self.debug:
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
+                #end if
+            #end if
 
-            if self.debug:
-                sys.stdout.write(char)
-                sys.stdout.flush()
-            #end if
-            line += char
             self.parseLine(line)
-            if char == "\n":
-                self.buff += re.sub(self.buffer_id_pattern, '', re.sub('^\\.\\.\\>', '', line))
-                line = ''
-            #end if
 
             with self.lock:
                 if self.quit: break
@@ -177,6 +274,10 @@ class SQLWorkbench(object):
                 print "You have to set the sql workbench command. Please see the help. "
                 sys.exit(1)
             #end if
+            if self.port == None:
+                print "You have to set the server port. Please see the help. "
+                sys.exit(1)
+            #end if
             self.servername = self.servername.upper()
             self.createCmdPipe()
 
@@ -196,7 +297,7 @@ class SQLWorkbench(object):
             pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
 
             thread.start_new_thread(self.receiver, (pipe,))
-            thread.start_new_thread(self.sender,   (pipe,))
+            #thread.start_new_thread(self.sender,   (pipe,))
             thread.start_new_thread(self.monitor,  (pipe,))
 
             try:
@@ -227,6 +328,7 @@ if __name__ == "__main__":
     parser.add_option("-p", "--profile",   help="The sql workbench profile",    dest="profile",     default=None)
     parser.add_option("-c", "--command",   help="The command to launch the sql workbench console",    dest="cmd",     default=None)
     parser.add_option("-v", "--vim",   help="The path to the vim executable", dest="vim",     default='vim')
+    parser.add_option("-o", "--port",   help="The port to bind the server", dest="port",     default='5000', type = "int")
     parser.add_option("-d", "--debug",   help="The debuging mode", dest="debug", default='0')
     (options,args) = parser.parse_args(sys.argv[1:], obj)
     obj.args = args
