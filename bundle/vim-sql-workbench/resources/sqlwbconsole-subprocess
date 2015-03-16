@@ -74,14 +74,13 @@ class SQLWorkbench(object):
                 else:
                     self.clock = datetime.datetime.now()
                     if line != '':
-                        out = pipe.communicate((line + "\n").encode())[0]
-                        print "LINE IS: " + out
+                        pipe.stdin.write(line + "\n")
                         #pipe.tochild.write(line + "\n")
                     #end if
                 #end if
             #end for
         #end while
-        pipe.tochild.write("\n/*SEND TO VIM*/;\n")
+        pipe.stdin.write("\n/*SEND TO VIM*/;\n")
     #end def receiveData
 
     def monitor(self, pipe):
@@ -198,7 +197,6 @@ class SQLWorkbench(object):
     #end def processResult
 
     def parseLine(self, line):
-        print "PARSING LINE: " + line
         if self.gotPrompt(line):
             if self.initialization:
                 self.initialization = False
@@ -220,11 +218,12 @@ class SQLWorkbench(object):
         while True:
             if self.initialization:
                 char = pipe.stdout.read(1)
+                line += char
                 if char == "\n":
                     line = ''
                 #end if
             else:
-                line = pipe.fromchild.readline()
+                line = pipe.stdout.readline()
                 if re.search(self.prompt_pattern_begin, line) != None:
                     self.addExeTime()
                 #end if
@@ -298,7 +297,7 @@ class SQLWorkbench(object):
                 cmd += " -profile=%s" % self.profile
             #end if
             print "OPENING: " + cmd
-            pipe = subprocess.Popen([self.cmd, '-feedback=true', '-profile=' + self.profile], stdin = subprocess.PIPE)
+            pipe = subprocess.Popen([self.cmd, '-feedback=true', '-profile=' + self.profile], stdin = subprocess.PIPE, stdout = subprocess.PIPE)
             #pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
 
             thread.start_new_thread(self.receiver, (pipe,))
