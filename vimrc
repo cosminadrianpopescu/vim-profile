@@ -158,6 +158,7 @@ nmap <Leader>: q:i
 cmap <C-k> <up>
 cmap <C-j> <down>
 nmap <Leader>x ggVGx
+nmap <C-i> :JavaImportOrganize<cr>
 nmap <Leader>r :e<cr>
 nmap <Leader>h :WintabsPrevious<cr>
 nmap <Leader>k :call wintabs#previous()<cr>
