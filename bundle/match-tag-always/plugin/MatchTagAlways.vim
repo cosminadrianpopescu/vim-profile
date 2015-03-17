@@ -46,6 +46,8 @@ if !exists('g:Mta_goto_enclosing_tag_map')
 	let g:Mta_goto_enclosing_tag_map = '<leader>%'
 endif
 
+command -nargs=0 MtaJumpToOtherTag call MatchTagAlways#GoToEnclosingTag()
+
 augroup matchtagalways
   autocmd! FileType * call MatchTagAlways#Setup()
 augroup END
