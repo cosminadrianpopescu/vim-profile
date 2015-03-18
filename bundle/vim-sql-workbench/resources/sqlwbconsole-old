@@ -8,12 +8,12 @@ import commands
 import datetime
 import os
 import socket
+import popen2
 import re
 import string
 import sys
 import thread
 import time
-import subprocess
 
 class SQLWorkbench(object):
     id     = None
@@ -60,7 +60,6 @@ class SQLWorkbench(object):
         self.buff = ''
         while 1:
             data = conn.recv(4096)
-            pipe.stdin.write("select * from j_assets\n");
             if not data: 
                 break
             #end if
@@ -74,13 +73,12 @@ class SQLWorkbench(object):
                 else:
                     self.clock = datetime.datetime.now()
                     if line != '':
-                        pipe.stdin.write(line + "\n")
-                        #pipe.tochild.write(line + "\n")
+                        pipe.tochild.write(line + "\n")
                     #end if
                 #end if
             #end for
         #end while
-        pipe.stdin.write("\n/*SEND TO VIM*/;\n")
+        pipe.tochild.write("\n/*SEND TO VIM*/;\n")
     #end def receiveData
 
     def monitor(self, pipe):
@@ -217,13 +215,13 @@ class SQLWorkbench(object):
         line = ''
         while True:
             if self.initialization:
-                char = pipe.stdout.read(1)
+                char = pipe.fromchild.read(1)
                 line += char
                 if char == "\n":
                     line = ''
                 #end if
             else:
-                line = pipe.stdout.readline()
+                line = pipe.fromchild.readline()
                 if re.search(self.prompt_pattern_begin, line) != None:
                     self.addExeTime()
                 #end if
@@ -281,10 +279,9 @@ class SQLWorkbench(object):
                 sys.exit(1)
             #end if
             self.servername = self.servername.upper()
-            # self.createCmdPipe()
+            self.createCmdPipe()
 
-            #servers = commands.getoutput(self.vim + " -u NONE -U NONE --serverlist")
-            servers = subprocess.Popen([self.vim, '--serverlist'], stdout=subprocess.PIPE).communicate()[0]
+            servers = commands.getoutput("vim -u NONE -U NONE --serverlist")
             servers = servers.split("\n")
 
             if not self.servername in servers:
@@ -297,21 +294,19 @@ class SQLWorkbench(object):
                 cmd += " -profile=%s" % self.profile
             #end if
             print "OPENING: " + cmd
-            pipe = subprocess.Popen([self.cmd, '-feedback=true', '-profile=' + self.profile], stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-            #pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
+            pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
 
             thread.start_new_thread(self.receiver, (pipe,))
             #thread.start_new_thread(self.sender,   (pipe,))
-            #thread.start_new_thread(self.monitor,  (pipe,))
+            thread.start_new_thread(self.monitor,  (pipe,))
 
             try:
-                self.monitor(pipe)
-                #while True:
-                #    if pipe.poll() != -1:
-                #        self.quit = True
-                #        break
-                #    time.sleep(0.1)
-                ##end while
+                while True:
+                    if pipe.poll() != -1:
+                        self.quit = True
+                        break
+                    time.sleep(0.1)
+                #end while
             except KeyboardInterrupt, ex:
                 with self.lock:
                     self.quit = True

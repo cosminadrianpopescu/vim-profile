@@ -8,12 +8,12 @@ import commands
 import datetime
 import os
 import socket
-import popen2
 import re
 import string
 import sys
 import thread
 import time
+import subprocess
 
 class SQLWorkbench(object):
     id     = None
@@ -73,12 +73,16 @@ class SQLWorkbench(object):
                 else:
                     self.clock = datetime.datetime.now()
                     if line != '':
-                        pipe.tochild.write(line + "\n")
+                        pipe.stdin.write(line + "\n")
+                        #pipe.tochild.write(line + "\n")
                     #end if
                 #end if
             #end for
         #end while
-        pipe.tochild.write("\n/*SEND TO VIM*/;\n")
+        if self.debug:
+            print "DISCONNECT"
+        #end if
+        pipe.stdin.write("\n/*SEND TO VIM*/;\n")
     #end def receiveData
 
     def monitor(self, pipe):
@@ -200,6 +204,9 @@ class SQLWorkbench(object):
                 self.initialization = False
                 self.buff = ''
                 self.line = ''
+                if self.debug:
+                    sys.stdout.write(line)
+                #end if
                 self.toVim('sw#server#new(\\"' + self.id + '\\", ' + str(self.port) + ')')
             else:
                 pattern = self.prompt_pattern_begin + '.*[^ \\s\\t;]+'
@@ -215,13 +222,16 @@ class SQLWorkbench(object):
         line = ''
         while True:
             if self.initialization:
-                char = pipe.fromchild.read(1)
+                char = pipe.stdout.read(1)
                 line += char
                 if char == "\n":
+                    if self.debug:
+                        sys.stdout.write(line)
+                    #end if
                     line = ''
                 #end if
             else:
-                line = pipe.fromchild.readline()
+                line = pipe.stdout.readline()
                 if re.search(self.prompt_pattern_begin, line) != None:
                     self.addExeTime()
                 #end if
@@ -279,9 +289,10 @@ class SQLWorkbench(object):
                 sys.exit(1)
             #end if
             self.servername = self.servername.upper()
-            self.createCmdPipe()
+            # self.createCmdPipe()
 
-            servers = commands.getoutput("vim -u NONE -U NONE --serverlist")
+            #servers = commands.getoutput(self.vim + " -u NONE -U NONE --serverlist")
+            servers = subprocess.Popen([self.vim, '--serverlist'], stdout=subprocess.PIPE).communicate()[0]
             servers = servers.split("\n")
 
             if not self.servername in servers:
@@ -289,24 +300,26 @@ class SQLWorkbench(object):
                 sys.exit(1)
             #end if
 
-            cmd = "%s -feedback=true" % (self.cmd)
+            cmd = "%s -feedback=false" % (self.cmd)
             if (self.profile != None):
                 cmd += " -profile=%s" % self.profile
             #end if
             print "OPENING: " + cmd
-            pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
+            pipe = subprocess.Popen([self.cmd, '-feedback=false', '-profile=' + self.profile], stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+            #pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
 
             thread.start_new_thread(self.receiver, (pipe,))
             #thread.start_new_thread(self.sender,   (pipe,))
-            thread.start_new_thread(self.monitor,  (pipe,))
+            #thread.start_new_thread(self.monitor,  (pipe,))
 
             try:
-                while True:
-                    if pipe.poll() != -1:
-                        self.quit = True
-                        break
-                    time.sleep(0.1)
-                #end while
+                self.monitor(pipe)
+                #while True:
+                #    if pipe.poll() != -1:
+                #        self.quit = True
+                #        break
+                #    time.sleep(0.1)
+                ##end while
             except KeyboardInterrupt, ex:
                 with self.lock:
                     self.quit = True

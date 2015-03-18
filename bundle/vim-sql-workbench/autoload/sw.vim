@@ -357,8 +357,8 @@ function! sw#execute_sql(profile, command, ...)
             return sw#get_sql_result(touch_result)
         endif
     else
-        call sw#server#execute_sql(a:command)
         let b:async_on_progress = 1
+        call sw#server#execute_sql(a:command)
     endif
 
 	redraw!
