@@ -82,7 +82,7 @@ class SQLWorkbench(object):
         if self.debug:
             print "DISCONNECT"
         #end if
-        pipe.stdin.write("\n/*SEND TO VIM*/;\n")
+        pipe.stdin.write("wbvardef send_to_vim = 1;\n")
     #end def receiveData
 
     def monitor(self, pipe):
@@ -146,7 +146,7 @@ class SQLWorkbench(object):
     #end def parseCustomCommand
 
     def toSendToVim(self, line):
-        return re.search("/\\*SEND TO VIM\\*/;[ \\s\\t\\n]*$", line) != None
+        return re.search("Variable send_to_vim", line) != None
     #end def toSendToVim
 
     def addExeTime(self):
@@ -300,26 +300,25 @@ class SQLWorkbench(object):
                 sys.exit(1)
             #end if
 
-            cmd = "%s -feedback=false" % (self.cmd)
+            cmd = "%s -feedback=true" % (self.cmd)
             if (self.profile != None):
                 cmd += " -profile=%s" % self.profile
             #end if
             print "OPENING: " + cmd
-            pipe = subprocess.Popen([self.cmd, '-feedback=false', '-profile=' + self.profile], stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+            pipe = subprocess.Popen([self.cmd, '-feedback=true', '-profile=' + self.profile], stdin = subprocess.PIPE, stdout = subprocess.PIPE, bufsize = 1)
             #pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
 
             thread.start_new_thread(self.receiver, (pipe,))
             #thread.start_new_thread(self.sender,   (pipe,))
-            #thread.start_new_thread(self.monitor,  (pipe,))
+            thread.start_new_thread(self.monitor,  (pipe,))
 
             try:
-                self.monitor(pipe)
-                #while True:
-                #    if pipe.poll() != -1:
-                #        self.quit = True
-                #        break
-                #    time.sleep(0.1)
-                ##end while
+                while True:
+                    if pipe.poll() != None:
+                        self.quit = True
+                        break
+                    time.sleep(0.1)
+                #end while
             except KeyboardInterrupt, ex:
                 with self.lock:
                     self.quit = True
