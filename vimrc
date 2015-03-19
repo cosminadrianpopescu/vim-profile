@@ -83,7 +83,6 @@ let g:ctrlp_funky_matchtype = 'path'
 let g:ctrlp_funky_syntax_highlight = 1
 let g:ctrlp_extensions = ['funky', 'line']
 let g:ctrlp_regexp = 1
-let g:Mta_goto_enclosing_tag_map = '<leader>\'
 let g:sw_delete_tmp = 0
 ""let g:sw_asynchronious = 1
 
@@ -159,6 +158,7 @@ cmap <C-k> <up>
 cmap <C-j> <down>
 nmap <Leader>x ggVGx
 nmap <C-i> :JavaImportOrganize<cr>
+nmap <leader>\ :MtaJumpToOtherTag<cr>
 nmap <Leader>r :e<cr>
 nmap <Leader>h :WintabsPrevious<cr>
 nmap <Leader>k :call wintabs#previous()<cr>

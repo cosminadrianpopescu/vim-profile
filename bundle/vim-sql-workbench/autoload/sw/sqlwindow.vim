@@ -537,7 +537,11 @@ function! sw#sqlwindow#execute_sql(sql)
         call s:process_result(result)
     else
         if sw#is_async()
-            call s:process_result(['Processing a command. Please wait...'])
+            if (exists('b:port'))
+                echomsg "Processing a command. Please wait..."
+            else
+                call s:process_result(['Processing a command. Please wait...'])
+            endif
         endif
     endif
 endfunction

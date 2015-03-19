@@ -188,6 +188,22 @@ function! s:on_windows()
 	endif
 endfunction
 
+function s:set_async_on_progress()
+    if sw#dbexplorer#is_db_explorer_tab()
+        call sw#dbexplorer#set_values_to_all_buffers(['async_on_progress'], [1])
+    else
+        let b:async_on_progress = 1
+    endif
+endfunction
+
+function s:unset_async_on_progress()
+    if sw#dbexplorer#is_db_explorer_tab()
+        call sw#dbexplorer#unset_values_to_all_buffers(['async_on_progress'])
+    else
+        unlet b:async_on_progress
+    endif
+endfunction
+
 " Executes a shell command{{{1
 function! sw#do_shell(command)
     let prefix = ''
@@ -217,7 +233,7 @@ function! sw#do_shell(command)
 		endif
 
 		if async
-            let b:async_on_progress = 1
+            call s:set_async_on_progress()
 			return 1
 		endif
 	endif
@@ -357,8 +373,8 @@ function! sw#execute_sql(profile, command, ...)
             return sw#get_sql_result(touch_result)
         endif
     else
+        call s:set_async_on_progress()
         call sw#server#execute_sql(a:command)
-        let b:async_on_progress = 1
     endif
 
 	redraw!
