@@ -38,9 +38,17 @@ function! sw#server#run(port, ...)
     redraw!
 endfunction
 
-function! sw#server#connect_buffer(port, file, command)
+function! sw#server#connect_buffer(port, ...)
     let profile = 'server_' . a:port
-    call sw#sqlwindow#open_buffer(profile, a:file, a:command)
+    let file = bufname('%')
+    let command = 'e'
+    if (a:0 >= 2)
+        let file = a:1
+        let command = a:2
+    elseif a:0 >= 1
+        let command = a:1
+    endif
+    call sw#sqlwindow#open_buffer(profile, file, command)
     call sw#session#set_buffer_variable('profile', 'server_' . a:port . '_' . b:unique_id)
     call sw#session#set_buffer_variable('port', a:port)
 endfunction
