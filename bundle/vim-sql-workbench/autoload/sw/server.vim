@@ -18,45 +18,54 @@
 "============================================================================"
 
 let s:current_file = expand('<sfile>:p:h')
-let s:active_servers = {}
+let s:active_servers = []
 
 function! s:get_pipe_name(id)
     return g:sw_tmp . '/sw-pipe-' . a:id
 endfunction
 
-function! sw#server#run(profile, port)
+function! sw#server#run(port, ...)
     if !exists('g:loaded_dispatch')
         throw 'You cannot start a server without vim dispatch plugin. Please install it first. If you don''t want or you don''t have the possibility to install it, you can always start the server manually. '
     endif
-    let cmd = 'Start! ' . s:current_file . '/../../resources/sqlwbconsole' . ' -t ' . g:sw_tmp . ' -p ' . a:profile . ' -s ' . v:servername . ' -c ' . g:sw_exe . ' -v ' . g:sw_vim_exe . ' -o ' . a:port
+    let cmd = 'Start! ' . s:current_file . '/../../resources/sqlwbconsole' . ' -t ' . g:sw_tmp . ' -s ' . v:servername . ' -c ' . g:sw_exe . ' -v ' . g:sw_vim_exe . ' -o ' . a:port
+
+    if a:0
+        let cmd = cmd + ' -p ' . a:1
+    endif
 
     execute cmd
     redraw!
 endfunction
 
-function! sw#server#connect_buffer(profile, file, command)
-    if !has_key(s:active_servers, a:profile)
-        throw "There is no sql workbench server with the id " . a:profile
-    endif
-    call sw#sqlwindow#open_buffer(a:profile, a:file, a:command)
-    call sw#session#set_buffer_variable('port', s:active_servers[a:profile])
+function! sw#server#connect_buffer(port, file, command)
+    let profile = 'server_' . a:port
+    call sw#sqlwindow#open_buffer(profile, a:file, a:command)
+    call sw#session#set_buffer_variable('profile', 'server_' . a:port . '_' . b:unique_id)
+    call sw#session#set_buffer_variable('port', a:port)
 endfunction
 
-function! sw#server#ping(id)
-    call s:pipe_execute('/*!#ping*/', a:id)
+function! sw#server#ping(port)
+    call s:pipe_execute('/*!#ping*/', a:port)
 endfunction
 
-function! sw#server#new(id, port)
-    let s:active_servers[a:id] = a:port
-    echomsg "Added new server: " . a:id
+function! sw#server#new(port)
+    call add(s:active_servers, a:port)
+    echomsg "Added new server on port: " . a:port
     call sw#interrupt()
     redraw!
     return ''
 endfunction
 
-function! sw#server#remove(id)
-    call remove(s:active_servers, a:id)
-    echomsg "Removed server: " . a:id
+function! sw#server#remove(port)
+    let i = 0
+    for port in s:active_servers
+        if port == a:port
+            unlet s:active_servers[i]
+        endif
+        let i = i + 1
+    endfor
+    echomsg "Removed server from port: " . a:port
     call sw#interrupt()
     redraw!
     return ''

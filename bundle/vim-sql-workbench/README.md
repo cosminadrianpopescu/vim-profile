@@ -242,9 +242,9 @@ The SQL buffer is a normal `vim` buffer from which you can send SQL commands
 to your DBMS and in which you can use the omni completion (&lt;C-x&gt;&lt;C-o&gt;) to have
 intellisense autocompletion. 
 
-In order to open a buffer, you have to call the command `SWSqlOpen` or
-`SWSqlOpenDirect`. You can see the parameters of each of the commands in the
-"Commands" chapter. 
+In order to open a buffer, you have to call the command `SWSqlOpen`,
+`SWSqlOpenDirect` or `SWSqlConnectToServer`. You can see the parameters of
+each of the commands in the "Commands" chapter. 
 
 Once in an sql buffer, you have several ways to execute commands against your
 DBMS: 
@@ -988,8 +988,8 @@ Lists the parameters values
 
 *Parameters*:
 
-* the profile: the profile used for the `SQL Workbench/J` console
 * the port: the port on which the server will listen
+* the profile: optional, you can choose a profile when starting the server
 
 This command will spawn a new server which will launch a `SQL Workbench/J` in
 console mode. This can be used if you want to use transactions. 
@@ -1010,7 +1010,7 @@ console mode will be closed.
 
 *Parameters*: 
 
-* profile name: the name of the profile for which to open the sql buffer.
+* port: the port of the server
 * file name: the name of the file to open. 
 
 This will open a new buffer which will be connected to an existing
@@ -1145,7 +1145,7 @@ Basically the plugin will connect to this port (using a `python` function,
 thus the need to have `vim` compiled with `python` support), will send the
 command and it will indicate to the server where it will wait for the result. 
 
-The `resources/sqlwbconsole` script will execute send the command to `SQL
+The `resources/sqlwbconsole` script will send the command to `SQL
 Workbench/J`, get its output and send it back to vim. 
 
 There are two ways to start a permanent connection: 
@@ -1154,15 +1154,16 @@ There are two ways to start a permanent connection:
 
 For this you need to have the `vim dispatch` plugin installed. If you want to
 start a new permanent connection from `vim`, you can call the command
-`SWServerStart` with the profile that you want to connect to and with the port
-on which to listen. 
+`SWServerStart` with the port on which the server will listen. Also, you can
+choose a profile for the new connection. If you don't choose a profile now,
+you will have to execute `WbConnect` in order to connect to a database. 
 
 Please note that having a permanent connection, you can also do `WBConnect` to
 change the connection. See
 [here](http://www.sql-workbench.net/manual/wb-commands.html#command-connect)
 for more informations. 
 
-For example: `SWServerStart myProfile 5000`. 
+For example: `SWServerStart 5000`. 
 
 ## Opening a permanent connection manually
 
@@ -1171,7 +1172,6 @@ always open a permanent connection manually. From your terminal, you need to
 run the `resources/sqlwbconsole` script. For a list of parameters you can do
 `resources/sqlwbconsole --help`. The following parameters are mandatory: 
 
-* The profile (`-p`)
 * The temporary folder (`-t`). Please note that this should be identical with
   `g:sw_tmp`
 * The vim server name (`-s`). You can get this by doing `:echo v:servername`
@@ -1182,9 +1182,11 @@ run the `resources/sqlwbconsole` script. For a list of parameters you can do
 *Example*: 
 
 ```
-`resources/sqlwbconsole -p myProfile -t /tmp -s VIM -c
-/usr/bin/sqlwbconsole.sh -o 5000`
+`resources/sqlwbconsole -t /tmp -s VIM -c /usr/bin/sqlwbconsole.sh -o 5000`
 ```
+
+You can also use the `-p` parameter, to also connect to a database. Otherwise,
+after you connect with a buffer, you will need to do `WbConnect`. 
 
 If you don't want to use this way of sending commands, you can at any time run
 the `SWSqlBufferSetProfile` command to switch to the batch mode. 
