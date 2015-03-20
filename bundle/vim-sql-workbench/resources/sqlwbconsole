@@ -10,13 +10,13 @@ import os
 import socket
 import re
 import string
+import shlex
 import sys
 import thread
 import time
 import subprocess
 
 class SQLWorkbench(object):
-    id     = None
     servername = "vim"
     profile = None
     uid = None
@@ -38,17 +38,6 @@ class SQLWorkbench(object):
     prompt_pattern_begin = '^[a-zA-Z_0-9]+(\\@[a-zA-Z_0-9]+)?\\>[ \s\t]*'
     prompt_pattern = prompt_pattern_begin + '$'
     buffer_id_pattern = '[\\.a-zA-Z_0-9]+\\@[a-zA-Z_0-9]+?\\>[ \s\t]*\/\*([0-9]+)#([0-9]+)\*\/'
-
-    def getPipeName(self):
-        return "%s/sw-pipe-%s" % (self.tmp, self.id)
-
-    def createCmdPipe(self):
-        os.mkfifo(self.getPipeName(), 0600)
-    #end def createCmdPipe
-
-    def removeCmdPipe(self):
-        os.system ("rm -f %s" % self.getPipeName())
-    #end def removeCmdPipe
 
     def sendToWB(self, data, pipe):
         self.toRead = len(data)
@@ -173,7 +162,7 @@ class SQLWorkbench(object):
             if re.search('-- auto[\\n\\t\\s ]*$', line) != None:
                 do_add = False
             #end if
-            if do_add:
+            if do_add and re.search('wbvardef send_to_vim = 1', line) == None:
                 result += line + "\n"
             #end if
             if re.search('-- end auto[\\n\\s\\t ]*$', line) != None:
@@ -207,7 +196,7 @@ class SQLWorkbench(object):
                 if self.debug:
                     sys.stdout.write(line)
                 #end if
-                self.toVim('sw#server#new(\\"' + self.id + '\\", ' + str(self.port) + ')')
+                self.toVim('sw#server#new(' + str(self.port) + ')')
             else:
                 pattern = self.prompt_pattern_begin + '.*[^ \\s\\t;]+'
                 self.addExeTime()
@@ -272,62 +261,51 @@ class SQLWorkbench(object):
     #end def toVim
 
     def main(self):
+        if self.cmd == None:
+            print "You have to set the sql workbench command. Please see the help. "
+            sys.exit(1)
+        #end if
+        if self.port == None:
+            print "You have to set the server port. Please see the help. "
+            sys.exit(1)
+        #end if
+        self.servername = self.servername.upper()
+        # self.createCmdPipe()
+
+        #servers = commands.getoutput(self.vim + " -u NONE -U NONE --serverlist")
+        servers = subprocess.Popen([self.vim, '--serverlist'], stdout=subprocess.PIPE).communicate()[0]
+        servers = servers.split("\n")
+
+        if not self.servername in servers:
+            print "The vim server with this instance does not exists"
+            sys.exit(1)
+        #end if
+
+        cmd = "%s -feedback=true" % (self.cmd)
+        if (self.profile != None):
+            cmd += " -profile=%s" % self.profile
+        #end if
+        print "OPENING: " + cmd
+        pipe = subprocess.Popen(shlex.split(cmd), stdin = subprocess.PIPE, stdout = subprocess.PIPE, bufsize = 1)
+        #pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
+
+        thread.start_new_thread(self.receiver, (pipe,))
+        #thread.start_new_thread(self.sender,   (pipe,))
+        thread.start_new_thread(self.monitor,  (pipe,))
+
         try:
-            if self.id == None and self.profile == None: 
-                print "You have to set the vim id or the profile. Please see the help. "
-                sys.exit(1)
-            #end if
-            if self.id == None:
-                self.id = self.profile
-            #end if
-            if self.cmd == None:
-                print "You have to set the sql workbench command. Please see the help. "
-                sys.exit(1)
-            #end if
-            if self.port == None:
-                print "You have to set the server port. Please see the help. "
-                sys.exit(1)
-            #end if
-            self.servername = self.servername.upper()
-            # self.createCmdPipe()
-
-            #servers = commands.getoutput(self.vim + " -u NONE -U NONE --serverlist")
-            servers = subprocess.Popen([self.vim, '--serverlist'], stdout=subprocess.PIPE).communicate()[0]
-            servers = servers.split("\n")
-
-            if not self.servername in servers:
-                print "The vim server with this instance does not exists"
-                sys.exit(1)
-            #end if
-
-            cmd = "%s -feedback=true" % (self.cmd)
-            if (self.profile != None):
-                cmd += " -profile=%s" % self.profile
-            #end if
-            print "OPENING: " + cmd
-            pipe = subprocess.Popen([self.cmd, '-feedback=true', '-profile=' + self.profile], stdin = subprocess.PIPE, stdout = subprocess.PIPE, bufsize = 1)
-            #pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
-
-            thread.start_new_thread(self.receiver, (pipe,))
-            #thread.start_new_thread(self.sender,   (pipe,))
-            thread.start_new_thread(self.monitor,  (pipe,))
-
-            try:
-                while True:
-                    if pipe.poll() != None:
-                        self.quit = True
-                        break
-                    time.sleep(0.1)
-                #end while
-            except KeyboardInterrupt, ex:
-                with self.lock:
+            while True:
+                if pipe.poll() != None:
                     self.quit = True
-            #end try...except
-            time.sleep(0.3)
-            self.toVim('sw#server#remove(\\"%s\\")' % self.id)
-        finally:
-            self.removeCmdPipe()
-        #end try
+                    break
+                time.sleep(0.1)
+            #end while
+        except KeyboardInterrupt, ex:
+            with self.lock:
+                self.quit = True
+        #end try...except
+        time.sleep(0.3)
+        self.toVim('sw#server#remove(\\"%s\\")' % self.port)
     #end def main
 #end class SQLWorkbench
 
@@ -335,7 +313,6 @@ if __name__ == "__main__":
     obj = SQLWorkbench()
     parser = OptionParser()
     parser.add_option("-s", "--server", help="GVIM Server Name", dest="servername", default="vim")
-    parser.add_option("-i", "--id",   help="The id of the instance",    dest="id",     default="Unknown")
     parser.add_option("-t", "--tmp",   help="The location of tmp folder",    dest="tmp",     default="/tmp")
     parser.add_option("-p", "--profile",   help="The sql workbench profile",    dest="profile",     default=None)
     parser.add_option("-c", "--command",   help="The command to launch the sql workbench console",    dest="cmd",     default=None)

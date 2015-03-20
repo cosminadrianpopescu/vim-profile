@@ -228,7 +228,7 @@ command! -nargs=0 SWVarList call sw#variables#list()
 
 command! -nargs=+ -complete=customlist,sw#autocomplete_profile SWServerStart call sw#server#run(<f-args>)
 command! -nargs=1 SWServerStop call sw#server#stop(<f-args>)
-command! -nargs=+ -complete=customlist,sw#autocomplete_profile_for_buffer SWSqlConnectToServer call sw#server#connect_buffer(<f-args>, g:sw_sqlopen_command)
+command! -nargs=+ -complete=file SWSqlConnectToServer call sw#server#connect_buffer(<f-args>, g:sw_sqlopen_command)
 
 augroup sw
 autocmd sw BufDelete,BufWipeout * call sw#session#sync()

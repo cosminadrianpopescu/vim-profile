@@ -188,7 +188,7 @@ function! s:on_windows()
 	endif
 endfunction
 
-function s:set_async_on_progress()
+function! s:set_async_on_progress()
     if sw#dbexplorer#is_db_explorer_tab()
         call sw#dbexplorer#set_values_to_all_buffers(['async_on_progress'], [1])
     else
@@ -196,7 +196,7 @@ function s:set_async_on_progress()
     endif
 endfunction
 
-function s:unset_async_on_progress()
+function! s:unset_async_on_progress()
     if sw#dbexplorer#is_db_explorer_tab()
         call sw#dbexplorer#unset_values_to_all_buffers(['async_on_progress'])
     else
@@ -627,11 +627,7 @@ function! sw#autocomplete_profile(ArgLead, CmdLine, CursorPos)
     return result
 endfunction
 
-function! sw#autocomplete_profile_for_buffer(ArgLead, CmdLine, CursorPos)
-    let words = split(a:CmdLine, '\v\s+')
-    if len(words) == 1 || (len(words) == 2 && !(a:CmdLine =~ '\v\s+$'))
-        return sw#autocomplete_profile(a:ArgLead, a:CmdLine, a:CursorPos)
-    endif
+function! s:autocomplete_path(ArgLead, CmdLine, CursorPos)
     if a:ArgLead =~ '\v^\s*$'
         let path = '*'
     else
@@ -640,4 +636,21 @@ function! sw#autocomplete_profile_for_buffer(ArgLead, CmdLine, CursorPos)
     return split(glob(path), '\n')
 endfunction
 
+function! sw#autocomplete_profile_for_server(ArgLead, CmdLine, CursorPos)
+    let words = split(a:CmdLine, '\v\s+')
+    if len(words) == 4 || (len(words) == 3 && a:CmdLine =~ '\v\s+$')
+        return sw#autocomplete_profile(a:ArgLead, a:CmdLine, a:CursorPos)
+    endif
+    if len(words) == 3 || (len(words) == 2 && a:CmdLine =~ '\v\s+$')
+        return s:autocomplete_path(a:ArgLead, a:CmdLine, a:CursorPos)
+    endif
+    return []
+endfunction
 
+function! sw#autocomplete_profile_for_buffer(ArgLead, CmdLine, CursorPos)
+    let words = split(a:CmdLine, '\v\s+')
+    if len(words) == 1 || (len(words) == 2 && !(a:CmdLine =~ '\v\s+$'))
+        return sw#autocomplete_profile(a:ArgLead, a:CmdLine, a:CursorPos)
+    endif
+    return s:autocomplete_path(a:ArgLead, a:CmdLine, a:CursorPos)
+endfunction
