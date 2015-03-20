@@ -81,8 +81,8 @@ snippet class_com
 	 * <p>${1:class_description}</p>
 	 *
 	 */
-	public class ${2:class_name} {
-		${3}
+	public class `substitute(expand('%:r'), '\v\c^.*\/([^\/]+)$', '\1', 'g')` {
+		${2}
 	}
 
 snippet elif
