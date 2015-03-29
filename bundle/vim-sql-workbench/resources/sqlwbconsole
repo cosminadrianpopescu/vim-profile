@@ -23,17 +23,21 @@ class SQLWorkbench(object):
     cmd = None
     buffer_id = None
     port = None
+    current_connection = None
+    results = {}
     debug = 0
     instance_id = None
-    custom_command_pattern = '(ping|buffer_id[ \\s\\t]*=[ \\s\\t]*[0-9]+|instance_id[ \\s\\t]*=[ \\s\\t]*[0-9]+)'
+    custom_command_pattern = '(ping|fetch_result|buffer_id[ \\s\\t]*=[ \\s\\t]*[0-9]+|instance_id[ \\s\\t]*=[ \\s\\t]*[0-9]+)'
     vim = 'vim'
     tmp = "/tmp"
     clock = datetime.datetime.now()
     who = None
     initialization = True
+    async = True
     buff = ''
     quit       = False
     lock       = thread.allocate_lock()
+    receive_result = thread.allocate_lock()
     lastFile   = ''
     prompt_pattern_begin = '^[a-zA-Z_0-9]+(\\@[a-zA-Z_0-9]+)?\\>[ \s\t]*'
     prompt_pattern = prompt_pattern_begin + '$'
@@ -44,11 +48,11 @@ class SQLWorkbench(object):
         pipe.tochild.write(data)
     #end def sendToWB
 
-    def receiveData(self, conn, pipe):
+    def receiveData(self, pipe):
         self.line = ''
         self.buff = ''
         while 1:
-            data = conn.recv(4096)
+            data = self.current_connection.recv(4096)
             if not data: 
                 break
             #end if
@@ -57,7 +61,7 @@ class SQLWorkbench(object):
                 if re.search('^!#', line) != None:
                     command = self.gotCustomCommand(line)
                     if command != None:
-                        self.parseCustomCommand(command)
+                        self.parseCustomCommand(command, pipe)
                     #end if
                 else:
                     self.clock = datetime.datetime.now()
@@ -68,11 +72,16 @@ class SQLWorkbench(object):
                 #end if
             #end for
         #end while
+        pipe.stdin.write("wbvardef send_to_vim = 1;\n")
+    #end def receiveData
+
+    def disconnect(self):
         if self.debug:
             print "DISCONNECT"
         #end if
-        pipe.stdin.write("wbvardef send_to_vim = 1;\n")
-    #end def receiveData
+        self.current_connection.close()
+        self.current_connection = None
+    #end disconnect
 
     def monitor(self, pipe):
         HOST = '127.0.0.1'   # Symbolic name meaning all available interfaces
@@ -90,13 +99,19 @@ class SQLWorkbench(object):
         #now keep talking with the client
         while 1:
             #wait to accept a connection - blocking call
-            conn, addr = s.accept()
+            self.current_connection, addr = s.accept()
             if self.debug:
                 print 'Connected with ' + addr[0] + ':' + str(addr[1])
             #end if
 
-            self.receiveData(conn, pipe)
-            #thread.start_new_thread(self.receiveData, (conn, pipe))
+            self.receiveData(pipe)
+            if self.async:
+                self.disconnect()
+            else:
+                with self.receive_result:
+                    self.sendBackResult()
+                #end with
+            #end if
              
             with self.lock:
                 if self.quit:
@@ -123,7 +138,7 @@ class SQLWorkbench(object):
         return None
     #end def gotCustomCommand
 
-    def parseCustomCommand(self, command):
+    def parseCustomCommand(self, command, pipe):
         p = re.search('^(instance_id|buffer_id)[ \\s\\t]*=[\\s \\t]*([0-9]+)[ \\s\\t]*$', command)
         if p != None:
             if p.group(1) == 'instance_id':
@@ -131,8 +146,22 @@ class SQLWorkbench(object):
             elif p.group(1) == 'buffer_id':
                 self.buffer_id = p.group(2)
             #end if
+            return 
+        #end if
+
+        p = re.search('^(fetch_result)', command)
+        if p != None:
+            self.sendBackResult()
         #end if
     #end def parseCustomCommand
+
+    def sendBackResult(self):
+        if self.current_connection != None:
+            self.current_connection.send(self.results[self.instance_id + '_' + self.buffer_id])
+            del self.results[self.instance_id + '_' + self.buffer_id]
+            self.disconnect()
+        #end if
+    #end def sendBackResult
 
     def toSendToVim(self, line):
         return re.search("Variable send_to_vim", line) != None
@@ -176,10 +205,12 @@ class SQLWorkbench(object):
     def processResult(self):
         if self.instance_id != None and self.buffer_id != None:
             self.prepareResult()
-            f = open('/tmp/sw-result-' + self.instance_id + '-' + self.buffer_id, 'w')
-            f.write(self.buff)
-            f.close()
-            self.toVim('sw#got_async_result(\\"%s\\")' % self.buffer_id)
+            self.results[self.instance_id + '_' + self.buffer_id] = self.buff
+            if self.async:
+                self.toVim('sw#got_async_result(\\"%s\\")' % self.buffer_id)
+            else:
+                self.sendBackResult()
+            #end if
         #end if
         self.buff = ''
         self.buffer_id = None
@@ -210,47 +241,36 @@ class SQLWorkbench(object):
     def receiver(self, pipe):
         line = ''
         while True:
-            if self.initialization:
-                char = pipe.stdout.read(1)
-                line += char
-                if char == "\n":
+            with self.receive_result:
+                if self.initialization:
+                    char = pipe.stdout.read(1)
+                    line += char
+                    if char == "\n":
+                        if self.debug:
+                            sys.stdout.write(line)
+                        #end if
+                        line = ''
+                    #end if
+                else:
+                    line = pipe.stdout.readline()
+                    if re.search(self.prompt_pattern_begin, line) != None:
+                        self.addExeTime()
+                    #end if
+                    self.buff += re.sub(self.prompt_pattern, '', re.sub('^\\.\\.\\> ', '', line))
                     if self.debug:
                         sys.stdout.write(line)
+                        sys.stdout.flush()
                     #end if
-                    line = ''
                 #end if
-            else:
-                line = pipe.stdout.readline()
-                if re.search(self.prompt_pattern_begin, line) != None:
-                    self.addExeTime()
-                #end if
-                self.buff += re.sub(self.prompt_pattern, '', re.sub('^\\.\\.\\> ', '', line))
-                if self.debug:
-                    sys.stdout.write(line)
-                    sys.stdout.flush()
-                #end if
-            #end if
 
-            self.parseLine(line)
+                self.parseLine(line)
 
-            with self.lock:
-                if self.quit: break
+                with self.lock:
+                    if self.quit: break
+                #end with
             #end with
         #end while
     #end def receiver
-
-    def sender(self, pipe):
-        while True:
-            char = sys.stdin.read(1)
-            pipe.tochild.write(char)
-            with self.lock:
-                if self.quit:
-                    pipe.tochild.write('exit;\n')
-                    break
-                #end if
-            #end with
-        #end while
-    #end def sender
 
     def toVim(self, cmd):
         _cmd = '%s --servername %s -u NONE -U none --remote-expr "%s"' % (self.vim, self.servername, cmd)
@@ -290,7 +310,6 @@ class SQLWorkbench(object):
         #pipe = popen2.Popen3(cmd, capturestderr=False, bufsize=0)
 
         thread.start_new_thread(self.receiver, (pipe,))
-        #thread.start_new_thread(self.sender,   (pipe,))
         thread.start_new_thread(self.monitor,  (pipe,))
 
         try:

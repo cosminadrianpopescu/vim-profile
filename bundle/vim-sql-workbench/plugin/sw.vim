@@ -53,14 +53,6 @@ if !exists('g:sw_search_default_tables')
     let g:sw_search_default_tables = '%'
 endif
 
-if !exists('g:sw_autocomplete_cache_dir')
-    let g:sw_autocomplete_cache_dir = $HOME . '/.cache/sw'
-endif
-
-if !exists('g:sw_autocomplete_on_load')
-    let g:sw_autocomplete_on_load = 1
-endif
-
 if !exists('g:sw_search_default_exclude_tables')
     let g:sw_search_default_exclude_tables = ''
 endif
@@ -77,24 +69,13 @@ if !exists('g:sw_search_default_compare_types')
     let g:sw_search_default_compare_types = 'contains'
 endif
 
-if (!exists('g:sw_feedback'))
-    let g:sw_feedback = 1
+if !exists('g:sw_autocomplete_cache_dir')
+    let g:sw_autocomplete_cache_dir = $HOME . '/.cache/sw'
 endif
 
-if (!exists('g:sw_abort_on_errors'))
-    let g:sw_abort_on_errors = 1
+if (!exists('g:sw_delimiter'))
+    let g:sw_delimiter = ';'
 endif
-
-if (!exists('g:sw_display_result_as'))
-    let g:sw_display_result_as = 'tab'
-endif
-
-if (!exists('g:sw_max_results'))
-    let g:sw_max_results = 0
-endif
- if (!exists('g:sw_delimiter'))
-     let g:sw_delimiter = ';'
- endif
 
 if !exists('g:sw_sqlopen_command')
     let g:sw_sqlopen_command = 'e'
@@ -102,10 +83,6 @@ endif
 
 if (!exists('g:sw_default_right_panel_type'))
     let g:sw_default_right_panel_type = 'txt'
-endif
-
-if (!exists('g:sw_show_shell_output'))
-    let g:sw_show_shell_output = 0
 endif
 
 if (!exists('g:sw_open_export'))
@@ -148,20 +125,12 @@ if (!exists('g:extra_sw_tabs'))
     let g:extra_sw_tabs = {}
 endif
 
-if (!exists('g:sw_asynchronious'))
-	let g:sw_asynchronious = 0
-endif
-
 if !exists('g:vim_exe')
     let g:sw_vim_exe = 'vim'
 endif
 
 if !exists('g:sw_tab_switches_between_bottom_panels')
 	let g:sw_tab_switches_between_bottom_panels = 1
-endif
-
-if !exists('g:sw_delete_tmp')
-	let g:sw_delete_tmp = 1
 endif
 
 "if !exists('g:sw_overwrite_current_command')
@@ -195,9 +164,9 @@ command! SWDbExplorerRestore call sw#session#restore_dbexplorer()
 command! -nargs=1 -complete=customlist,sw#autocomplete_profile SWSqlBufferSetProfile call sw#sqlwindow#open_buffer(<f-args>, bufname('%'), 'e')
 command! -nargs=+ -complete=customlist,sw#autocomplete_profile_for_buffer SWSqlOpen call sw#sqlwindow#open_buffer(<f-args>, g:sw_sqlopen_command)
 command! -nargs=+ -complete=file SWSqlOpenDirect call sw#sqlwindow#open_buffer_no_profile(<f-args>)
-command! SWSqlExecuteCurrent call sw#sqlwindow#execute_sql(sw#sqlwindow#extract_current_sql())
-command! SWSqlExecuteSelected call sw#sqlwindow#execute_sql(sw#sqlwindow#extract_selected_sql())
-command! SWSqlExecuteAll call sw#sqlwindow#execute_sql(sw#sqlwindow#extract_all_sql())
+command! -bang SWSqlExecuteCurrent call sw#sqlwindow#execute_sql(<bang>0, sw#sqlwindow#extract_current_sql())
+command! -bang SWSqlExecuteSelected call sw#sqlwindow#execute_sql(<bang>0, sw#sqlwindow#extract_selected_sql())
+command! -bang SWSqlExecuteAll call sw#sqlwindow#execute_sql(<bang>0, sw#sqlwindow#extract_all_sql())
 command! -nargs=1 -complete=customlist,sw#sqlwindow#display_options SWSqlDisplayResultsAs call sw#sqlwindow#set_display(<f-args>)
 command! -nargs=1 SWSqlMaxResults call sw#sqlwindow#set_max_rows(<f-args>)
 command! -nargs=1 SWSqlDelimiter call sw#sqlwindow#set_delimiter(<f-args>)
@@ -214,9 +183,7 @@ command! -nargs=1 SWSearchObjectDefaults call sw#search#object_defaults(<f-args>
 command! -nargs=+ SWSearchData call sw#search#data(<f-args>)
 command! SWSearchDataAdvanced call sw#search#data()
 command! -nargs=1 SWSearchDataDefaults call sw#search#data_defaults(<f-args>)
-command! -nargs=* SWSqlAutocomplete call sw#autocomplete#cache(<f-args>)
-command! SWSqlAutocompleteSetDefault call sw#autocomplete#set_cache_default()
-command! SWSqlAutocompleteWithDefault setlocal omnifunc=sw#autocomplete#perform
+command! -bang -nargs=* SWSqlAutocomplete call sw#autocomplete#cache(<bang>0, <f-args>)
 command! SWSqlBufferRestore call sw#session#restore_sqlbuffer()
 command! -nargs=0 SWKillCurrentCommand call sw#kill_current_command()
 
