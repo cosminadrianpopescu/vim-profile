@@ -468,12 +468,11 @@ function! sw#sqlwindow#execute_sql(wait_result, sql)
         endif
     endif
     let b:on_async_result = 'sw#sqlwindow#check_results'
+    echomsg "Processing a command. Please wait..."
     let result = sw#execute_sql(_sql, a:wait_result)
 
     if result != ''
         call s:process_result(result)
-    else
-        echomsg "Processing a command. Please wait..."
     endif
 endfunction
 

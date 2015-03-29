@@ -165,9 +165,13 @@ function! sw#export_ods(command)
 endfunction
 
 " Hides columns from a resultset{{{1
-function! sw#hide_columns(rows, columns)
+function! sw#hide_columns(rows, columns, ...)
+    let row_start = 1
+    if a:0
+        let row_start = a:1
+    endif
     let result = []
-    let a_columns = split(a:rows[1], "|")
+    let a_columns = split(a:rows[row_start], "|")
     let i = 0
     let final = len(a:rows)
     if (g:sw_show_command)

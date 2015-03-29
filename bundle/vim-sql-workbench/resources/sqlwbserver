@@ -7,6 +7,7 @@ from optparse   import OptionParser
 import commands
 import datetime
 import os
+import uuid
 import socket
 import re
 import string
@@ -79,6 +80,7 @@ class SQLWorkbench(object):
         result = ''
         record = 0
         i = 0
+        to_add_results = False
         pattern1 = '-- auto[ \\s\\t\\r\\n]*$' 
         pattern2 = '-- end auto[ \\s\\t\\r\\n]*$' 
         for line in lines:
@@ -94,12 +96,14 @@ class SQLWorkbench(object):
                 if re.search('wbvardef send_to_vim = 1', line) == None:
                     if i < len(line) - 1:
                         if re.search('^[\\-\\+]+$', lines[i + 1]):
+                            to_add_results = True
                             result += "--results--"
                         #end if
                     #end if
 
                     p = re.search('^\\(([0-9]+) Row[s]?\\)', line)
                     if p != None:
+                        to_add_results = False
                         result = result.replace('--results--', 
                                 '\n==============================================================================\n' + 
                                 'Query returned ' + p.group(1) + ' row' + ('s' if int(p.group(1)) > 1 else '') + '\n')
@@ -115,19 +119,27 @@ class SQLWorkbench(object):
             #end if
         #end for
 
+        if to_add_results:
+            result = result.replace('--results--', 
+                    '\n==============================================================================\n')
+        #end if
+
         return result
     #end def prepareResult
 
     def spawnDbeConnection(self, profile):
-        if profile in self.dbe_connections:
-            return self.dbe_connections[profile]
-        #end if
-
         cmd = "%s -feedback=true -showProgress=false -profile=%s" % (self.cmd, profile)
         print "OPENING DBE CONNECTION: " + cmd
         pipe = subprocess.Popen(shlex.split(cmd), stdin = subprocess.PIPE, stdout = subprocess.PIPE, bufsize = 1)
         self.dbe_connections[profile] = pipe
-        return pipe
+        while 1:
+            with self.lock:
+                if self.quit: break
+            #end with
+            time.sleep(0.3)
+        #end while
+
+        pipe.stdin.write("exit\n")
     #end def spawnDbeConnection
 
     def dbExplorer(self, conn):
@@ -138,17 +150,19 @@ class SQLWorkbench(object):
             if (char != '\n'):
                 profile += char
             #end if
-        #end while 
-        if (profile != ''):
-            pipe = self.spawnDbeConnection(profile)
+        #end while
+        if not (profile in self.dbe_connections):
+            thread.start_new_thread(self.spawnDbeConnection, (profile, ))
+        else:
+            pipe = self.dbe_connections[profile]
+            data = conn.recv(4096)
+            if (data):
+                data += "wbvardef send_to_vim = 1;\n"
+                pipe.stdin.write(data)
+                result = self.receiverDbe(pipe)
+                conn.send(self.prepareResult(result))
+            #end if
         #end if
-        char = ''
-        line = ''
-        line = conn.makefile().readline()
-        line += "wbvardef send_to_vim = 1;\n"
-        pipe.stdin.write(line)
-        result = self.receiverDbe(pipe)
-        conn.send(self.prepareResult(result))
     #end def dbExplorer
 
     def searchResult(self, conn):

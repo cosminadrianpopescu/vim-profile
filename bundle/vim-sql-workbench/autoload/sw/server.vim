@@ -102,11 +102,11 @@ if vim.eval('a:wait_result') == '0':
     s.sendall("!#identifier = " + identifier + "\n")
 #end if
 s.sendall(cmd)
-if vim.eval('a:wait_result') == '0':
+if vim.eval('a:wait_result') == '0' or (vim.eval('a:wait_result') == '1' and type != 'RES' and type != 'DBE'):
     s.sendall("!#end = 1\n")
 #end if
 result = ''
-if vim.eval('a:wait_result') != '0':
+if vim.eval('a:wait_result') == '1':
     while 1:
         data = s.recv(4096)
         if not data:
@@ -134,6 +134,35 @@ endfunction
 
 function! sw#server#fetch_result()
     let result = s:pipe_execute('RES', v:servername . "#" . b:unique_id, 1, b:port)
+    return result
+endfunction
+
+function! sw#server#open_dbexplorer(profile, port)
+    return s:pipe_execute('DBE', a:profile . "\n", 2, a:port)
+endfunction
+
+function! sw#server#dbexplorer(sql)
+    if !exists('b:profile')
+        return
+    endif
+    let s = s:pipe_execute('DBE', b:profile . "\n" . a:sql . ';', 1)
+    let lines = split(s, "\n")
+    let result = []
+    let rec = 0
+    for line in lines
+        if line =~ '\v\c^[ \\s\\t]*$'
+            let rec = 0
+            if (len(result) > 0)
+                call add(result, '')
+            endif
+        endif
+        if rec
+            call add(result, line)
+        endif
+        if line =~ '\v\c^[\=]+$'
+            let rec = 1
+        endif
+    endfor
     return result
 endfunction
 
