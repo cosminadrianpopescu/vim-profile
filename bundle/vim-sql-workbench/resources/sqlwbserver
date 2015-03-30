@@ -159,6 +159,7 @@ class SQLWorkbench(object):
         else:
             pipe = self.dbe_connections[profile]
             data = conn.recv(4096)
+            print "DATA: " + data
             if (data):
                 data += "wbvardef send_to_vim = 1;\n"
                 pipe.stdin.write(data)
@@ -287,7 +288,7 @@ class SQLWorkbench(object):
         time = ''
         line = ''
         buff = ''
-        while re.search('wbvardef send_to_vim = 1', line) == None and re.search('using :send_to_vim', line) == None:
+        while re.search('using :send_to_vim', line) == None:
             line = pipe.stdout.readline()
             buff += line
             if self.debug:
