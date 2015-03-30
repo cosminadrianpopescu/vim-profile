@@ -101,10 +101,10 @@ either opening a sql buffer with `SWSqlOpenDirect` and then executing
 Once you have your profiles created, you can use `SWDbExplorer` or `SWSqlOpen`
 with the desired profile as argument and you will connect to the database. 
 
-For example, `:SWDbExplorer myProfile` will open a database explorer using the
-profile `myProfile`. Or `SWSqlOpen myProfile /tmp/myfile.sql` will open the
-file `/tmp/myfile.sql` as an sql buffer. Any command launched from the buffer
-will be using the `myProfile` profile. 
+For example, `:SWDbExplorer myProfile 5000` will open a database explorer
+using the profile `myProfile`. Or `SWSqlOpen myProfile /tmp/myfile.sql` will
+open the file `/tmp/myfile.sql` as an sql buffer. Any command launched from
+the buffer will be using the `myProfile` profile. 
 
 The database explorer
 ========================================
@@ -1182,11 +1182,9 @@ run the `resources/sqlwbconsole` script. For a list of parameters you can do
 *Example*: 
 
 ```
-`resources/sqlwbconsole -t /tmp -s VIM -c /usr/bin/sqlwbconsole.sh -o 5000`
+`resources/sqlwbconsole -t /tmp -s VIM -c
+/usr/bin/sqlwbconsole.sh -o 5000`
 ```
-
-You can also use the `-p` parameter, to also connect to a database. Otherwise,
-after you connect with a buffer, you will need to do `WbConnect`. 
 
 If you don't want to use this way of sending commands, you can at any time run
 the `SWSqlBufferSetProfile` command to switch to the batch mode. 

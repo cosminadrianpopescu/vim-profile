@@ -2,6 +2,7 @@ viminfo
 undos
 bundle/Omnisharp
 bundle/eclim
+bundle/autocwd.vim/
 bundle/netrw
 view
 .netrwhist
