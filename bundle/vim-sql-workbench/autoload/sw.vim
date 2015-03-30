@@ -17,6 +17,10 @@
 "
 "============================================================================"
 
+if !exists('g:Sw_unique_id')
+    let g:Sw_unique_id = 1
+endif
+
 if exists('v:servername') && exists('g:sw_vim_exe')
 	if v:servername != ''
 		let s:wake_vim_cmd = g:sw_vim_exe . ' --servername ' . v:servername
@@ -171,7 +175,7 @@ function! sw#hide_columns(rows, columns, ...)
         let row_start = a:1
     endif
     let result = []
-    let a_columns = split(a:rows[row_start], "|")
+    let a_columns = split(substitute(a:rows[row_start], '\v\c^[^\>\|]+\> ', '', 'g'), "|")
     let i = 0
     let final = len(a:rows)
     if (g:sw_show_command)

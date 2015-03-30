@@ -91,6 +91,7 @@ function! s:pipe_execute(type, cmd, wait_result, ...)
 
     python << SCRIPT
 import vim
+import re
 identifier = vim.eval('v:servername') + "#" + vim.eval('uid')
 cmd = vim.eval('a:cmd') + "\n"
 port = int(vim.eval('port'))
@@ -109,6 +110,9 @@ result = ''
 if vim.eval('a:wait_result') == '1':
     while 1:
         data = s.recv(4096)
+        if (re.search('^DISCONNECT', data)):
+            break
+        #end if
         if not data:
             break
         #end if
@@ -125,7 +129,7 @@ SCRIPT
     if len(result) <= 3
         let result = ''
     endif
-    return result
+    return substitute(result, '\r', '', 'g')
 endfunction
 
 function! sw#server#stop(port)
@@ -138,7 +142,7 @@ function! sw#server#fetch_result()
 endfunction
 
 function! sw#server#open_dbexplorer(profile, port)
-    return s:pipe_execute('DBE', a:profile . "\n", 2, a:port)
+    return s:pipe_execute('DBE', a:profile . "\n", 1, a:port)
 endfunction
 
 function! sw#server#dbexplorer(sql)
@@ -150,7 +154,7 @@ function! sw#server#dbexplorer(sql)
     let result = []
     let rec = 0
     for line in lines
-        if line =~ '\v\c^[ \\s\\t]*$'
+        if line =~ '\v\c^[ \s\t\r]*$'
             let rec = 0
             if (len(result) > 0)
                 call add(result, '')
