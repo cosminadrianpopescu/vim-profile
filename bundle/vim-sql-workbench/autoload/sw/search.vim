@@ -91,7 +91,7 @@ function! s:input_select(message, default_value, options)
 endfunction
 
 function! s:process_search_result(result, columns)
-    let result = a:result
+    let result = split(a:result, "\n")
     if a:columns != ''
         let _c = split(a:columns, ',')
         let columns = []
@@ -136,25 +136,45 @@ function! s:process_search_result(result, columns)
 
 		let result = _r
     endif
-    let __name = ''
-    if exists('b:max_results')
-        let __name = bufname('%')
-        let uid = b:unique_id
-        let name = s:get_resultset_name()
-        if (!bufexists(name))
-            let port = b:port
-			let s_below = &splitbelow
-			set splitbelow
-            execute "split " . name
-			call sw#session#init_section()
-            call sw#set_special_buffer()
-            call sw#session#set_buffer_variable('port', port)
-			if !s_below
-				set nosplitbelow
-			endif
-			call sw#session#set_buffer_variable('state', 'resultsets')
-            call sw#session#set_buffer_variable('r_unique_id', uid)
+    let resultsets = []
+    let messages = []
+    let where = 'm'
+    for line in result
+        if line =~ '\v\c^[\=]+$'
+            let where = 'r'
+        elseif line =~ '\v\c^$'
+            let where = 'm'
         endif
+        if where == 'm'
+            call add(messages, line)
+        else
+            if !(line =~ '\v\c[\=]+$')
+                call add(resultsets, line)
+            endif
+        endif
+    endfor
+    let result = resultsets
+    let __name = ''
+    let __name = bufname('%')
+    let uid = b:unique_id
+    let name = s:get_resultset_name()
+    if (!bufexists(name))
+        let port = b:port
+        let s_below = &splitbelow
+        set splitbelow
+        execute "split " . name
+        call sw#session#init_section()
+        call sw#set_special_buffer()
+        call sw#session#set_buffer_variable('port', port)
+        if !s_below
+            set nosplitbelow
+        endif
+        call sw#session#set_buffer_variable('resultsets', resultsets)
+        call sw#session#set_buffer_variable('state', 'resultsets')
+        call sw#session#set_buffer_variable('r_unique_id', uid)
+    endif
+    if (len(messages) > 0)
+        call sw#session#set_buffer_variable('messages', messages)
     endif
     let highlight = ''
     if exists('b:highlight')
@@ -167,8 +187,8 @@ function! s:process_search_result(result, columns)
 
         let highlight = '\V' . highlight
     endif
-    if bufwinnr('__SQL__-' . b:port) != -1
-        call sw#goto_window('__SQL__-' . b:port)
+    if bufwinnr('__SQL__-' . uid) != -1
+        call sw#goto_window('__SQL__-' . uid)
     else
         call sw#goto_window(s:get_resultset_name())
         let __name = sw#find_buffer_by_unique_id(b:r_unique_id)
@@ -183,16 +203,9 @@ function! s:process_search_result(result, columns)
     setlocal modifiable
     normal ggdG
 
-	let resultsets = []
-
     for line in result
         put =line
-		call add(resultsets, line)
     endfor
-
-	if exists('b:state')
-		call sw#session#set_buffer_variable('resultsets', resultsets)
-	endif
 
     normal ggdd
     if highlight != ''
@@ -273,10 +286,6 @@ function! sw#search#do(command, columns, wait_result)
 endfunction
 
 function! sw#search#data_defaults(wait_result, value)
-    if !exists('b:profile')
-        throw 'The search can be performed from a database explorer or an sql buffer.'
-    endif
-
     let command = 'WbGrepData -searchValue="' . escape(a:value, '"') . '" -ignoreCase=' . g:sw_search_default_ignore_case . ' -compareType=' . g:sw_search_default_compare_types . ' -tables=' . g:sw_search_default_tables . ' -types="' . g:sw_search_default_data_types . '" -excludeTables=' . g:sw_search_default_exclude_tables . ' -excludeLobs=' . g:sw_search_default_exclude_lobs
 
     call sw#session#set_buffer_variable('highlight', value)
@@ -290,9 +299,6 @@ function! sw#search#data_defaults(wait_result, value)
 endfunction
 
 function! sw#search#object_defaults(wait_result, values)
-    if !exists('b:profile')
-        throw 'The search can be performed from a database explorer or an sql buffer.'
-    endif
     let command = 'WbGrepSource -searchValues="' . escape(a:values, '"') . '" -useRegex=' . g:sw_search_default_regex . ' -matchAll=' . g:sw_search_default_match_all . ' -ignoreCase=' . g:sw_search_default_ignore_case . ' -types="' . g:sw_search_default_types . '" -objects=' . g:sw_search_default_objects
 
     call sw#search#do(command, g:sw_search_default_result_columns, a:wait_result)
@@ -349,9 +355,6 @@ function! s:get_search_parameters(v)
 endfunction
 
 function! sw#search#prepare(wait_result, cmd, ...)
-    if !exists('b:profile')
-        throw 'The search can be performed from a database explorer or an sql buffer.'
-    endif
     if !a:0
         if a:cmd == 'WbGrepSource'
             let command = a:cmd . s:get_search_parameters(s:obj_parameters)
