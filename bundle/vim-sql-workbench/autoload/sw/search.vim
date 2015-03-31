@@ -127,14 +127,16 @@ function! s:process_search_result(result, columns)
             let result = sw#hide_columns(result, hide)
         endif
 	else
-		let _r = []
-		for line in result
-			if !(line =~ ':')
-				call add(_r, line)
-			endif
-		endfor
+        if g:sw_last_sql_query =~ '\v\cwbgrepsource'
+            let _r = []
+            for line in result
+                if !(line =~ ':')
+                    call add(_r, line)
+                endif
+            endfor
 
-		let result = _r
+            let result = _r
+        endif 
     endif
     let resultsets = []
     let messages = []
@@ -149,6 +151,9 @@ function! s:process_search_result(result, columns)
             call add(messages, line)
         else
             if !(line =~ '\v\c[\=]+$')
+                if line =~ '\v\c^Query returned'
+                    call add(resultsets, '')
+                endif
                 call add(resultsets, line)
             endif
         endif
@@ -172,6 +177,7 @@ function! s:process_search_result(result, columns)
         call sw#session#set_buffer_variable('resultsets', resultsets)
         call sw#session#set_buffer_variable('state', 'resultsets')
         call sw#session#set_buffer_variable('r_unique_id', uid)
+        call sw#sqlwindow#set_results_shortcuts()
     endif
     if (len(messages) > 0)
         call sw#session#set_buffer_variable('messages', messages)
@@ -288,7 +294,7 @@ endfunction
 function! sw#search#data_defaults(wait_result, value)
     let command = 'WbGrepData -searchValue="' . escape(a:value, '"') . '" -ignoreCase=' . g:sw_search_default_ignore_case . ' -compareType=' . g:sw_search_default_compare_types . ' -tables=' . g:sw_search_default_tables . ' -types="' . g:sw_search_default_data_types . '" -excludeTables=' . g:sw_search_default_exclude_tables . ' -excludeLobs=' . g:sw_search_default_exclude_lobs
 
-    call sw#session#set_buffer_variable('highlight', value)
+    call sw#session#set_buffer_variable('highlight', a:value)
     call sw#session#set_buffer_variable('highlight_case', '')
     
     if g:sw_search_default_ignore_case == 'Y'
