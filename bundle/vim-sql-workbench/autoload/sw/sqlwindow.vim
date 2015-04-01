@@ -123,7 +123,7 @@ function! sw#sqlwindow#set_delimiter(new_del)
 endfunction
 
 function! sw#sqlwindow#export_last()
-    call sw#export_ods(b:profile, g:sw_last_sql_query)
+    call sw#export_ods(g:sw_last_sql_query)
 endfunction
 
 function! sw#sqlwindow#extract_current_sql(...)

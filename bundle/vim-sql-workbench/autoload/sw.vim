@@ -163,7 +163,7 @@ function! sw#export_ods(command)
         let location = input('Please select a destination file: ', '', 'file')
         if (location != '')
             let queries = sw#sql_split(a:command)
-            return sw#server#execute_sql("WbExport -type=" . format . ' -file=' . location, 0)
+            return sw#sqlwindow#execute_sql(0, "WbExport -type=" . format . ' -file=' . location . ';' . queries[0])
         endif
     endif
 endfunction
@@ -178,9 +178,6 @@ function! sw#hide_columns(rows, columns, ...)
     let a_columns = split(substitute(a:rows[row_start], '\v\c^[^\>\|]+\> ', '', 'g'), "|")
     let i = 0
     let final = len(a:rows)
-    if (g:sw_show_command)
-        let final = len(a:rows) - 4
-    endif
     while i < final
         let s = ''
         let j = 0

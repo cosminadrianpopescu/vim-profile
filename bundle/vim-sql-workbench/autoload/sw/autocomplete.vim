@@ -750,3 +750,16 @@ function! s:get_tables(sql, subqueries)
 
     return tables
 endfunction
+
+function! sw#autocomplete#complete_cache_name(ArgLead, CmdLine, CursorPos)
+    let words = split('^' . a:CmdLine, '\v\s+')
+    let files = split(globpath(g:sw_autocomplete_cache_dir, '*'), "\n")
+    let result = []
+    for file in files
+        let f = substitute(file, '\v\c^.*\/([^\/\.]+)\.?.*$', '\1', 'g')
+        if a:CmdLine =~ '\v^' . f || a:CmdLine =~ '\v\s+$'
+            call add(result, f)
+        endif
+    endfor
+    return result
+endfunction
