@@ -108,7 +108,7 @@ class SQLWorkbench(object):
                                 '\n==============================================================================\n' + 
                                 'Query returned ' + p.group(1) + ' row' + ('s' if int(p.group(1)) > 1 else '') + '\n')
                     else:
-                        result = result + line + "\n"
+                        result = result + re.sub(self.prompt_pattern_begin, '', line) + "\n"
                     #end if
                 #end if
             #end if
@@ -124,9 +124,6 @@ class SQLWorkbench(object):
                     '\n==============================================================================\n')
         #end if
 
-        print '========================================================================'
-        print result
-        print '========================================================================'
         return result
     #end def prepareResult
 
@@ -162,7 +159,6 @@ class SQLWorkbench(object):
         else:
             pipe = self.dbe_connections[profile]
             data = conn.recv(4096)
-            print "DATA: " + data
             if (data):
                 data += "wbvardef send_to_vim = 1;\n"
                 pipe.stdin.write(data)
