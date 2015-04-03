@@ -207,6 +207,9 @@ class SQLWorkbench(object):
                         #end if
                     else:
                         self.clock = datetime.datetime.now()
+                        if self.debug:
+                            print "RECEIVED: " + line
+                        #end if
                         if line != '':
                             pipe.stdin.write(line + "\n")
                         #end if
