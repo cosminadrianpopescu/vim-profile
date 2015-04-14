@@ -130,6 +130,7 @@ class SQLWorkbench(object):
     def spawnDbeConnection(self, profile, conn):
         cmd = "%s -feedback=true -showProgress=false -profile=%s" % (self.cmd, profile)
         pipe = subprocess.Popen(shlex.split(cmd), stdin = subprocess.PIPE, stdout = subprocess.PIPE, bufsize = 1)
+        pipe.stdin.write('set maxrows = 100;\n')
         conn.send('DISCONNECT')
         self.dbe_connections[profile] = pipe
         print "OPENING DBE CONNECTION: " + cmd
