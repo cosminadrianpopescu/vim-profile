@@ -200,6 +200,9 @@ nmap <Leader>s :w<cr>
 nmap <Leader>q :WintabsClose<cr>:silent! edit<cr>
 nmap <Leader>fs :noautocmd VimgrepSearch 
 nmap <Leader>fh :noautocmd VimgrepSearchFromHere 
+nmap <Leader>fr :noautocmd VimgrepSearchRoot 
+nmap <Leader>fw :noautocmd VimgrepSearchRoot <C-r>=expand('<cword>')<cr><cr>
+vmap <Leader>fs y:noautocmd VimgrepSearchRoot <C-r>"<cr>
 nmap <Leader>ff :VimgrepSearchFromFolder 
 nmap <Leader>c :call eclim#lang#UpdateSrcFile('<C-R>=&filetype<cr>')<cr>
 nmap <Leader>Q :q!<cr>:tabp<cr>
@@ -353,3 +356,4 @@ call sw#dbexplorer#add_tab('*', 'Row Counts', 'W', 'WbRowCount;', [])
 call sw#dbexplorer#add_tab('*', 'User Jobs', 'J', 'select job_name, job_creator, start_date, repeat_interval from user_scheduler_jobs', [{'title': 'Job source', 'shortcut': 'S', 'command': "select job_action from user_scheduler_jobs where job_name = '%object%'", 'hide_header': 1, 'filetype': 'sql'}])
 call sw#dbexplorer#add_tab('*', 'Packages', 'K', "select OBJECT_NAME, OBJECT_TYPE, STATUS from user_objects where object_type in ('PACKAGE');", [{'title': 'SQL Source', 'shortcut': 'S', 'command': "select text from user_source where name = '%object%' and type='PACKAGE' order by line", 'hide_header': 1, 'filetype': 'sql'}])
 call sw#dbexplorer#add_tab('*', 'Packages Bodies', 'B', "select OBJECT_NAME, OBJECT_TYPE, STATUS from user_objects where object_type in ('PACKAGE BODY');", [{'title': 'SQL Source', 'shortcut': 'S', 'command': "select text from user_source where name = '%object%' and type = 'PACKAGE BODY' order by line", 'hide_header': 1, 'filetype': 'sql'}])
+call sw#dbexplorer#add_tab('*', 'Show schemas','M', 'wblistschemas;', [{'title': 'Select schema', 'shortcut': 'H', 'command': "alter session set current_schema = %object%;"}])

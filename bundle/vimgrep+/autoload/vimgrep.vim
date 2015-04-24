@@ -6,7 +6,7 @@ function! vimgrep#search(pattern, ...)
 	endif
 
 	let @/ = '\c\v' . substitute(a:pattern, '\v\c\/', '\\\/', 'g')
-	let cmd = 'grep! --exclude-dir=.idea --exclude-dir=target --exclude-dir=metadata --exclude=*.class -nriI "' . a:pattern . '" ' . path
+	let cmd = 'grep! --exclude-dir=.jazz5 --exclude-dir=.idea --exclude-dir=target --exclude-dir=.metadata --exclude=*.class -nriI "' . a:pattern . '" ' . path
 	echomsg cmd
 	silent! execute cmd
 	copen
