@@ -148,6 +148,7 @@ imap kk <C-R>"
 imap kj <Esc>
 imap <C-l> -<Esc>vy39po
 nmap <Leader>d :pwd<cr>
+nmap <C-p> :CtrlP <C-r>=getcwd()<cr><cr>
 nmap <Leader>t :NERDTreeToggle<cr>
 nmap <Leader>J :JavaSearch -p 
 ""nmap <Leader>x :WintabsClose<cr>:WintabsNext<cr>
@@ -354,6 +355,6 @@ so ~/.vim/colors.vim
 call sw#dbexplorer#add_tab('*', 'DB Links', 'L', 'select db_link, username, created  from user_db_links;', [{'title': 'Show the host', 'shortcut': 'H', 'command': "select host from user_db_links where db_link = '%object%'"}])
 call sw#dbexplorer#add_tab('*', 'Row Counts', 'W', 'WbRowCount;', [])
 call sw#dbexplorer#add_tab('*', 'User Jobs', 'J', 'select job_name, job_creator, start_date, repeat_interval from user_scheduler_jobs', [{'title': 'Job source', 'shortcut': 'S', 'command': "select job_action from user_scheduler_jobs where job_name = '%object%'", 'hide_header': 1, 'filetype': 'sql'}])
-call sw#dbexplorer#add_tab('*', 'Packages', 'K', "select OBJECT_NAME, OBJECT_TYPE, STATUS from user_objects where object_type in ('PACKAGE');", [{'title': 'SQL Source', 'shortcut': 'S', 'command': "select text from user_source where name = '%object%' and type='PACKAGE' order by line", 'hide_header': 1, 'filetype': 'sql'}])
-call sw#dbexplorer#add_tab('*', 'Packages Bodies', 'B', "select OBJECT_NAME, OBJECT_TYPE, STATUS from user_objects where object_type in ('PACKAGE BODY');", [{'title': 'SQL Source', 'shortcut': 'S', 'command': "select text from user_source where name = '%object%' and type = 'PACKAGE BODY' order by line", 'hide_header': 1, 'filetype': 'sql'}])
+call sw#dbexplorer#add_tab('*', 'Packages', 'K', "select OBJECT_NAME, OBJECT_TYPE, STATUS from user_objects where object_type in ('PACKAGE');", [{'title': 'SQL Source', 'shortcut': 'S', 'command': "select text from user_source where name = '%object%' and type='PACKAGE' order by line", 'hide_header': 1, 'filetype': 'sql'}, {'title': 'Compile', 'shortcut': 'E', 'command': 'alter package %object% compile package'}])
+call sw#dbexplorer#add_tab('*', 'Packages Bodies', 'B', "select OBJECT_NAME, OBJECT_TYPE, STATUS from user_objects where object_type in ('PACKAGE BODY');", [{'title': 'SQL Source', 'shortcut': 'S', 'command': "select text from user_source where name = '%object%' and type = 'PACKAGE BODY' order by line", 'hide_header': 1, 'filetype': 'sql'}, {'title': 'Compile', 'shortcut': 'E', 'command': 'alter package %object% compile body'}])
 call sw#dbexplorer#add_tab('*', 'Show schemas','M', 'wblistschemas;', [{'title': 'Select schema', 'shortcut': 'H', 'command': "alter session set current_schema = %object%;"}])
