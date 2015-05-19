@@ -139,6 +139,7 @@ autocmd BufWritePost * setl fdm=syntax
 autocmd FileType java nnoremap <leader>i :JavaSearch -p <c-r>=substitute(fnamemodify(@%, ':t'), '\v\.java$', '', 'g')<cr>.<c-r>=expand('<cword>')<cr> -t method -x implementors<cr> 
 autocmd FileType java nnoremap <leader>g :JavaSearchContext<cr>
 autocmd FileType php nnoremap <leader>g :PhpSearchContext<cr>
+""autocmd FileType jsp,jspf nmap <leader>g execute 'yi" | :<C-r>=fnamemodify(bufname('%'), '':p:h'')<cr>/<C-r>"'
 
 " ================================================================================
 " Mappings
