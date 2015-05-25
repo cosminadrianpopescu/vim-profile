@@ -200,12 +200,10 @@ inoremap <tab> <C-R>=TriggerSnippet()<CR>
 nmap <leader>By :SessionSave<cr>:qa<cr>
 nmap <Leader>s :w<cr>
 nmap <Leader>q :WintabsClose<cr>:silent! edit<cr>
-nmap <Leader>fs :noautocmd VimgrepSearch 
 nmap <Leader>fh :noautocmd VimgrepSearchFromHere 
-nmap <Leader>fr :noautocmd VimgrepSearchRoot 
-nmap <Leader>fw :noautocmd VimgrepSearchRoot <C-r>=expand('<cword>')<cr><cr>
-vmap <Leader>fs y:noautocmd VimgrepSearchRoot <C-r>"<cr>
-nmap <Leader>ff :VimgrepSearchFromFolder 
+nmap <Leader>fr :noautocmd LuceneSearch 
+nmap <Leader>fw :noautocmd LuceneSearch <C-r>=expand('<cword>')<cr><cr>
+vmap <Leader>fs y:noautocmd LuceneSearch <C-r>"<cr>
 nmap <Leader>c :call eclim#lang#UpdateSrcFile('<C-R>=&filetype<cr>')<cr>
 nmap <Leader>Q :q!<cr>:tabp<cr>
 ""nmap <C-]> <C-w><C-]><C-w>T
