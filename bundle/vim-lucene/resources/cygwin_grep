@@ -1,0 +1,16 @@
+#!/bin/bash 
+
+dest=/tmp/grep-result
+
+grep -nri "$@" >$dest
+
+# echo -ne '' >$dest
+# 
+# for file in "$@"
+# do
+#     if [ "$file" != "$1" ]
+#     then
+#         echo -n "$file:" >>$dest
+#         grep -ni $1 $file >>$dest
+#     fi
+# done

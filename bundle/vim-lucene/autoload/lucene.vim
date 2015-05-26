@@ -1,3 +1,5 @@
+let s:script_path = expand('<sfile>:p:h') . '/../'
+
 function! s:pipe_execute(cmd)
     execute "silent !echo 'Running " . a:cmd . "'. Please wait..."
     let port = g:Lucene_port
@@ -60,8 +62,17 @@ function! lucene#search(pattern, type, ...)
     for file in files
         let grep = grep . file . ' '
     endfor
-    let grep = 'grep! -niI "' . a:pattern . '" ' . grep
+    let g:lucene_cygwin = 1
+    if g:lucene_cygwin == 1
+        let cmd = "!" . s:script_path . "resources/cygwin_grep "
+    else 
+        let cmd = "grep! -niI "
+    endif
+    let grep = cmd . '"' . a:pattern . '" ' . grep
     silent! execute grep
+    if (g:lucene_cygwin)
+        cfile /tmp/grep-result
+    endif
     copen
 	redraw!
 endfunction
