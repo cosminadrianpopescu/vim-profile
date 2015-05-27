@@ -104,6 +104,7 @@ if $OS =~ '\c\vwindows'
 	let g:sw_tmp = 'e:/tmp'
 	let g:sw_config_dir = 'z:/.sqlworkbench/'
 	let g:sw_vim_exe = 'DISPLAY=localhost:0 /opt/vim/bin/vim'
+    let g:Lucene_port = 5002
 endif
 
 ""if $CHANGE_CURSOR == "1"
@@ -203,7 +204,7 @@ nmap <Leader>q :WintabsClose<cr>:silent! edit<cr>
 nmap <Leader>fh :noautocmd VimgrepSearchFromHere 
 nmap <Leader>fr :noautocmd LuceneSearch 
 nmap <Leader>fw :noautocmd LuceneSearch <C-r>=expand('<cword>')<cr><cr>
-vmap <Leader>fs y:noautocmd LuceneSearch <C-r>"<cr>
+vmap <Leader>fs y:noautocmd VimgrepSearch <C-r>"<cr>
 nmap <Leader>c :call eclim#lang#UpdateSrcFile('<C-R>=&filetype<cr>')<cr>
 nmap <Leader>Q :q!<cr>:tabp<cr>
 ""nmap <C-]> <C-w><C-]><C-w>T
