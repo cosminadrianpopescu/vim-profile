@@ -43,7 +43,7 @@ function! lucene#search(pattern, type, ...)
     if (a:type == 'regex')
         let @/ = '\c\v' . substitute(a:pattern, '\c\v^\.\*(.*)\.\*$', '\1', 'g')
     endif
-    let pattern = a:pattern
+    let pattern = tolower(a:pattern)
     if (a:type == 'wild')
         let pattern = '*' . pattern . '*'
     endif
@@ -60,9 +60,8 @@ function! lucene#search(pattern, type, ...)
     let files = split(result, "\n")
     let grep = ''
     for file in files
-        let grep = grep . file . ' '
+        let grep = grep . substitute(file, "\\", "/", 'g') . ' '
     endfor
-    let g:lucene_cygwin = 1
     if g:lucene_cygwin == 1
         let cmd = "!" . s:script_path . "resources/cygwin_grep "
     else 
@@ -70,10 +69,10 @@ function! lucene#search(pattern, type, ...)
     endif
     let grep = cmd . '"' . a:pattern . '" ' . grep
     silent! execute grep
-    if (g:lucene_cygwin)
+    copen
+    if (g:lucene_cygwin == 1)
         cfile /tmp/grep-result
     endif
-    copen
 	redraw!
 endfunction
 
